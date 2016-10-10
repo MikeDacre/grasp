@@ -3,6 +3,7 @@ Setup Script for Slurmy
 """
 import os
 import codecs
+from subprocess import call
 
 # Make setuptools work everywhere
 import ez_setup
@@ -10,6 +11,7 @@ ez_setup.use_setuptools()
 
 import setuptools
 from setuptools import setup
+from setuptools.command.install import install
 log = setuptools.distutils.log
 
 here = os.path.abspath(os.path.dirname(__file__))
@@ -24,12 +26,24 @@ scpt_dir = os.listdir(os.path.join(here, 'bin'))
 for scpt in scpt_dir:
     scpts.append(os.path.join('bin', scpt))
 
+# Initialize the config on install
+class CustomInstall(install):
+
+    """Run the config initialization on install."""
+
+    def run(self):
+        """Run install script."""
+        if not os.path.exists(os.path.expanduser('~/.grasp')):
+            install.run(self)
+        call(['grasp', 'config', '--init'])
+
 setup(
     name='grasp',
     version='0.1',
     description='A Simple GRASP (grasp.nhlbi.nih.gov) API based on SQLAlchemy and Pandas',
     long_description=long_description,
     url='https://github.com/MikeDacre/grasp',
+    include_package_data=True,
     author='Michael Dacre',
     author_email='mike.dacre@gmail.com',
     license='MIT',
@@ -53,7 +67,8 @@ setup(
     keywords='grasp sqlalchemy',
 
     requires=['sqlalchemy', 'pandas', 'tqdm'],
-    install_requires=['python-dateutil'],  # Crashes if in requires.
+    install_requires=['sqlalchemy', 'pandas', 'tqdm', 'python-dateutil'],
     packages=['grasp'],
     scripts=scpts,
+    cmdclass={'install': CustomInstall},
 )

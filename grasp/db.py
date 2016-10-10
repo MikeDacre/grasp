@@ -2,7 +2,7 @@
 Functions for managing the GRASP database.
 
        Created: 2016-10-08
- Last modified: 2016-10-10 12:13
+ Last modified: 2016-10-10 15:11
 
 """
 import re
@@ -22,25 +22,34 @@ from tqdm import tqdm
 
 from .tables import Base, SNP, Phenotype, Platform, Population
 from .tables import pheno_assoc_table, plat_assoc_table
+from .config import config
 
 ###############################################################################
 #                               Core Functions                                #
 ###############################################################################
 
 
-def get_session(db='grasp.db', echo=False):
-    """Return a session and engine."""
-    engine  = create_engine('sqlite:///{}'.format(db), echo=echo)
+def get_session(echo=False):
+    """Return a session and engine, uses config file."""
+    db_type = config['DEFAULT']['DatabaseType']
+    if db_type == 'sqlite':
+        engine_string = ('sqlite:///{db_file}'
+                         .format(db_file=config['sqlite']['DatabaseFile']))
+    else:
+        engine_string = ('{type}://{user}:{passwd}@{host}/grasp'
+                         .format(type=db_type,
+                                 user=config['other']['DatabaseUser'],
+                                 passwd=config['other']['DatabasePass'],
+                                 host=config['other']['DatabaseHost']))
+    engine  = create_engine(engine_string, echo=echo)
     Session = sessionmaker(bind=engine)
     return Session(), engine
 
 
-def initialize_database(grasp_file, dbfile='grasp.db', commit_every=50000,
-                        progress=True):
+def initialize_database(grasp_file, commit_every=50000, progress=True):
     """Create the database quickly.
 
     :grasp_file:   Tab delimited GRASP file.
-    :db_file:      The sqlite database file to write to.
     :commit_every: How many rows to go through before commiting to disk.
     :progress:     Display a progress bar (db length hard coded).
 
@@ -52,7 +61,7 @@ def initialize_database(grasp_file, dbfile='grasp.db', commit_every=50000,
     populations = {}
 
     # Create tables
-    _, engine = get_session(dbfile)
+    _, engine = get_session()
     Base.metadata.create_all(engine)
     conn = engine.connect()
 

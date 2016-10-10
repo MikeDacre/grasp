@@ -7,5 +7,6 @@ __version__ = '0.1'
 # Import ourself
 from . import tables
 from . import db
+from .tables import SNP, Phenotype, Platform, Population
 
-__all__ = ["tables"]
+__all__ = ["tables", "db"]
