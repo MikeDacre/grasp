@@ -15,7 +15,7 @@ Installation
 
 Use the standard installation procedure:
 
-.. code:: python
+.. code:: shell
 
   git clone https://github.com/MikeDacre/grasp.git
   cd grasp
