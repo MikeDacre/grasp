@@ -2,7 +2,7 @@
 Functions for managing the GRASP database.
 
        Created: 2016-10-08
- Last modified: 2016-10-10 18:12
+ Last modified: 2016-10-10 23:51
 
 """
 import re
@@ -46,7 +46,7 @@ def get_session(echo=False):
     return Session(), engine
 
 
-def initialize_database(study_file, grasp_file, commit_every=50000,
+def initialize_database(study_file, grasp_file, commit_every=100000,
                         progress=True):
     """Create the database quickly.
 
@@ -65,6 +65,7 @@ def initialize_database(study_file, grasp_file, commit_every=50000,
 
     # Create tables
     _, engine = get_session()
+    Base.metadata.drop_all(engine)
     Base.metadata.create_all(engine)
     conn = engine.connect()
 
@@ -216,17 +217,27 @@ def initialize_database(study_file, grasp_file, commit_every=50000,
     conn.execute(phstudy_ins, phstudy_records)
     conn.execute(plstudy_ins, plstudy_records)
 
-    sinfo = conn.execute(select([study_table.c.id, study_table.title])).all()
+    sinfo = conn.execute(select([study_table.c.id, study_table.c.pmid])).fetchall()
     studies = {}
-    for i, t in sinfo:
-        studies[t] = i
+    for i, p in sinfo:
+        studies[p] = i
+    no_pmid = {
+        'Dissertation (https://openaccess.leidenuniv.nl/handle/1887/17746)':                                                                          1,
+        'KARE Genomewide Association Study of Blood Pressure Using Imputed SNPs':                                                                     2,
+        'Genome-wide Association Study Identification of a New Genetic Locus with Susceptibility to Osteoporotic Fracture in the Korean Population.': 3,
+        'Genome-wide Association Study Identified TIMP2 Genetic Variant with Susceptibility to Osteoarthritis':                                       4,
+        'Application of Structural Equation Models to Genome-wide Association Analysis ':                                                             5,
+        'Comparison of Erythrocyte Traits Among European, Japanese and Korean':                                                                       6,
+        'Genomewide Association Study Identification of a New Genetic Locus with Susceptibility to Osteoporotic Fracture in the Korean Population':   7,
+        'Joint identification of multiple genetic variants of obesity in A Korean Genome-wide association study':                                     8,
+        'Genome-Wide Association Analyses on Blood Pressure Using Three Different Phenotype Definitions':                                             9,
+        'Association of intronic sequence variant in the gene encoding spleen tyrosine kinase with susceptibility to vascular dementia':              10,
+    }
 
     sys.stdout.write('Parsing SNP information\n')
     with open_zipped(grasp_file, encoding='latin1') as fin:
         # Drop header
         fin.readline()
-        for line in fin:
-            f = line.rstrip().split('\t')
 
         if progress:
             pbar = tqdm(total=8864718, unit='snps')
@@ -268,6 +279,10 @@ def initialize_database(study_file, grasp_file, commit_every=50000,
                 sid       = spare_id
                 spare_id += 1
             l = len(f)
+            try:
+                study = studies[f[7].strip()]
+            except KeyError:
+                study = no_pmid[f[17].strip()]
             record = {
                 'id':               sid,
                 'NHLBIkey':         f[0],
@@ -278,7 +293,7 @@ def initialize_database(study_file, grasp_file, commit_every=50000,
                 'chrom':            f[5],
                 'pos':              int(f[6]),
                 'population':       population,
-                'study':            studies[f[17].strip()],
+                'study':            study,
                 'study_snpid':      f[8],
                 'paper_loc':        f[9],
                 'pval':             float(f[10]) if f[10] else None,

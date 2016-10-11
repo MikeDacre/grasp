@@ -2,11 +2,11 @@
 Table descriptions in SQLAlchemy ORM.
 
        Created: 2016-10-08
- Last modified: 2016-10-10 18:00
+ Last modified: 2016-10-10 23:50
 
 """
 from sqlalchemy import Table, Column, Index, ForeignKey
-from sqlalchemy import Integer, String, Float, Date, Boolean
+from sqlalchemy import BigInteger, Integer, String, Float, Date, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 
@@ -20,7 +20,7 @@ Base = declarative_base()
 
 snp_pheno_assoc = Table(
     'snp_pheno_association', Base.metadata,
-    Column('snp_id', Integer, ForeignKey('snps.id')),
+    Column('snp_id', BigInteger, ForeignKey('snps.id')),
     Column('pheno_id', Integer, ForeignKey('phenos.id'))
 )
 
@@ -48,10 +48,11 @@ class SNP(Base):
 
     __tablename__ = "snps"
 
-    id                 = Column(Integer, primary_key=True, index=True)
+    id                 = Column(BigInteger, primary_key=True, index=True)
     snpid              = Column(String, index=True)
     chrom              = Column(String(10))
     pos                = Column(Integer)
+    pval               = Column(Float, index=True)
     NHLBIkey           = Column(String)
     HUPfield           = Column(String)
     LastCurationDate   = Column(Date)
@@ -62,7 +63,6 @@ class SNP(Base):
                                       backref="snps")
     study_snpid        = Column(String)
     paper_loc          = Column(String)
-    pval               = Column(Float)
     primary_pheno      = Column(String)
     phenotypes         = relationship("Phenotype",
                                       secondary=snp_pheno_assoc,
@@ -94,6 +94,7 @@ class SNP(Base):
         'snpid':               'SNPid(dbSNP134)',
         'chrom':               'chr(hg19)',
         'pos':                 'pos(hg19)',
+        'pval':                'Pvalue',
         'NHLBIkey':            'NHLBIkey',
         'HUPfield':            'HUPfield',
         'LastCurationDate':    'LastCurationDate',
@@ -102,7 +103,6 @@ class SNP(Base):
         'study':               'Link to study table',
         'study_snpid':         'SNPid(in paper)',
         'paper_loc':           'LocationWithinPaper',
-        'pval':                'Pvalue',
         'primary_pheno':       'Phenotype',
         'phenotypes':          'Link to phenotypes',
         'InGene':              'InGene',
@@ -129,8 +129,7 @@ class SNP(Base):
     def __repr__(self):
         """Display information about the table."""
         return "{} ({}) <{}:{} pheno: {} total: {} EUR: {} AFR: {}".format(
-            self.id, self.SNPid, self.chrom, self.pos, self.Phenotype,
-            self.TotalSamples, self.EuropeanDiscovery, self.AfricanDiscovery)
+            self.id, self.SNPid, self.chrom, self.pos, self.primary_pheno)
 
 
 class Study(Base):
@@ -140,15 +139,15 @@ class Study(Base):
     __tablename__ = "studies"
 
     id               = Column(Integer, primary_key=True, index=True)
-    pmid             = Column(String(10))
+    pmid             = Column(String(100))
     title            = Column(String, index=True)
-    journal          = Column(String(50))
-    author           = Column(String(25))
+    journal          = Column(String)
+    author           = Column(String)
     grasp_ver        = Column(Integer)
     noresults        = Column(Boolean)
     results          = Column(Integer)
     qtl              = Column(Boolean)
-    pheno_desc       = Column(String)
+    pheno_desc       = Column(String, index=True)
     phenotypes       = relationship("Phenotype",
                                     secondary=study_pheno_assoc,
                                     back_populates="studies")
@@ -158,7 +157,7 @@ class Study(Base):
     mf               = Column(Boolean)
     mf_only          = Column(Boolean)
     sample_size      = Column(String)  # Maybe parse this better
-    replication_size = Column(Integer)
+    replication_size = Column(String)
     platforms        = relationship("Platform",
                                     secondary=study_plat_assoc,
                                     back_populates="studies")
@@ -246,6 +245,16 @@ class Study(Base):
         'rep_indonesian':   'Indonesian.1'
     }
 
+    def __repr__(self):
+        """Display information about this study."""
+        return "{} <{}:{} {} EUR: {}, AFR: {}>".format(
+            self.id, self.author, self.journal, self.pheno_desc,
+            self.european, self.african)
+
+    def __str__(self):
+        """Display reference."""
+        return "{}: {} ({}) (Inds: {})".format(self.journal, self.title,
+                                               self.author, self.total)
 
 class Phenotype(Base):
 

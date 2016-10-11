@@ -9,7 +9,7 @@ A Simple GRASP (grasp.nhlbi.nih.gov) API based on SQLAlchemy and Pandas
   ORGANIZATION: Stanford University
        LICENSE: MIT License, property of Stanford, use as you wish
        CREATED: 2016-11-08
- Last modified: 2016-10-10 18:04
+ Last modified: 2016-10-10 23:51
 
    DESCRIPTION: This is the front-end to a python grasp api, intended to allow
                 easy database creation and simple querying.
@@ -129,8 +129,8 @@ def main(argv=None):
                       "github.com/MikeDacre/grasp/blob/master/grasp2_studies.txt")
     init.add_argument('grasp_file',
                       help="GRASP tab delimeted file")
-    init.add_argument('-p', '--progress', action='store_true',
-                      help="Display a progress bar")
+    init.add_argument('-n', '--no-progress', action='store_false',
+                      help="Do not display a progress bar")
 
     # Initialize config
     conf = subparsers.add_parser('conf', aliases=['config'],
@@ -144,9 +144,13 @@ def main(argv=None):
     args = parser.parse_args(argv)
 
     if args.modes == 'init':
-        sys.stderr.write("Initializing\n")
+        print("This will overwrite your existing database.")
+        ans = input("Are you sure? [y/N] ")
+        if not ans.lower() == 'y':
+            return
+        print("Initializing")
         db.initialize_database(args.study_file, args.grasp_file,
-                               progress=args.progress)
+                               progress=args.no_progress)
 
     elif args.modes == 'config':
         # Use tab completion
@@ -165,7 +169,7 @@ def main(argv=None):
             t.createListCompleter(["sqlite", "mysql", "postgresql"])
             readline.set_completer(t.listCompleter)
             print("What kind of database do you want to use?")
-            db_type = input('sqlite/postgresql/mysql ').strip().lower()
+            db_type = input('sqlite/postgres/mysql ').strip().lower()
 
             # Initialize for sqlite
             if db_type.lower() == 'sqlite':
