@@ -2,7 +2,7 @@
 Functions for managing the GRASP database.
 
        Created: 2016-10-08
- Last modified: 2016-10-11 08:28
+ Last modified: 2016-10-11 08:50
 
 """
 import re
@@ -65,8 +65,11 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
 
     # Create tables
     _, engine = get_session()
+    print('Creating database tables, this may take a while if the old',
+          'database is large.')
     Base.metadata.drop_all(engine)
     Base.metadata.create_all(engine)
+    print('Tables created.')
     conn = engine.connect()
 
     # Get tables

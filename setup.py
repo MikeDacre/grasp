@@ -33,6 +33,7 @@ class CustomInstall(install):
 
     def run(self):
         """Run install script."""
+        install.run(self)
         if not os.path.exists(os.path.expanduser('~/.grasp')):
             install.run(self)
         call(['grasp', 'config', '--init'])
@@ -67,8 +68,7 @@ setup(
     keywords='grasp sqlalchemy',
 
     requires=['sqlalchemy', 'pandas', 'tqdm'],
-    install_requires=['sqlalchemy', 'pandas', 'tqdm', 'python-dateutil',
-                      'psycopg2'],
+    install_requires=['sqlalchemy', 'pandas', 'tqdm', 'python-dateutil'],
     packages=['grasp'],
     scripts=scpts,
     cmdclass={'install': CustomInstall},
