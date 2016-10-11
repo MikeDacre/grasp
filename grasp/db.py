@@ -2,7 +2,7 @@
 Functions for managing the GRASP database.
 
        Created: 2016-10-08
- Last modified: 2016-10-10 23:56
+ Last modified: 2016-10-11 08:28
 
 """
 import re
@@ -95,7 +95,7 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
 
     # Build study information from study file
     sys.stdout.write('Parsing study information.\n')
-    with open_zipped(study_file) as fin:
+    with _open_zipped(study_file) as fin:
         # Drop header
         fin.readline()
 
@@ -123,7 +123,7 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
                                                   f[18].strip())[0]
                 ]
                 imputed = True if impt == '(imputed)' else False
-                plats = split_messy_list(plat)
+                plats = _split_mesy_list(plat)
                 for plat in plats:
                     plat = plat.strip()
                     if plat not in platforms:
@@ -164,18 +164,19 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
                 'qtl':              True if f[6] == '1' else False,
                 'pheno_desc':       f[7].strip(),
                 'phenotypes':       our_phenos,
-                'datepub':          get_date(f[9]),
-                'in_nhgri':         get_bool(f[10]),
+                'datepub':          _get_date(f[9]),
+                'in_nhgri':         _get_bool(f[10]),
                 'journal':          f[11].strip(),
                 'title':            f[12].strip(),
                 'locations':        f[13].strip(),
-                'mf':               get_bool(f[14]),
-                'mf_only':          get_bool(f[15]),
+                'mf':               _get_bool(f[14]),
+                'mf_only':          _get_bool(f[15]),
                 'sample_size':      f[16].strip(),
                 'replication_size': f[17].strip(),
                 'platforms':        platforms,
                 'snp_count':        snp_count,
                 'imputed':          imputed,
+                'population_id':    population,
                 'population':       population,
                 'total':            int(f[20]),
                 'total_disc':       int(f[21]),
@@ -235,7 +236,7 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
     }
 
     sys.stdout.write('Parsing SNP information\n')
-    with open_zipped(grasp_file, encoding='latin1') as fin:
+    with _open_zipped(grasp_file, encoding='latin1') as fin:
         # Drop header
         fin.readline()
 
@@ -287,11 +288,12 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
                 'id':               sid,
                 'NHLBIkey':         f[0],
                 'HUPfield':         f[1],
-                'LastCurationDate': get_date(f[2]),
-                'CreationDate':     get_date(f[3]),
+                'LastCurationDate': _get_date(f[2]),
+                'CreationDate':     _get_date(f[3]),
                 'snpid':            f[4],
                 'chrom':            f[5],
                 'pos':              int(f[6]),
+                'population_id':    population,
                 'population':       population,
                 'study':            study,
                 'study_snpid':      f[8],
@@ -359,7 +361,7 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
 ###############################################################################
 
 
-def split_messy_list(string):
+def _split_mesy_list(string):
     """Split a string that contains commas and 'ands/&'
 
     :string:  A string with commas/ands/&
@@ -389,7 +391,7 @@ def split_messy_list(string):
     return [i for i in final_list if i]
 
 
-def get_date(string):
+def _get_date(string):
     """Return datetime date object from string."""
     try:
         return date.fromordinal(dateparse(string).toordinal())
@@ -398,13 +400,13 @@ def get_date(string):
         raise
 
 
-def get_bool(string):
+def _get_bool(string):
     """Return a bool from a string of y/n."""
     string = string.lower()
     return True if string == 'y' else False
 
 
-def open_zipped(infile, mode='r', encoding='utf-8'):
+def _open_zipped(infile, mode='r', encoding='utf-8'):
     """ Return file handle of file regardless of zipped or not
         Text mode enforced for compatibility with python2 """
     mode   = mode[0] + 't'

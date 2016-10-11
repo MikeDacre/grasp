@@ -2,7 +2,7 @@
 Table descriptions in SQLAlchemy ORM.
 
        Created: 2016-10-08
- Last modified: 2016-10-10 23:50
+ Last modified: 2016-10-11 08:26
 
 """
 from sqlalchemy import Table, Column, Index, ForeignKey
@@ -57,6 +57,7 @@ class SNP(Base):
     HUPfield           = Column(String)
     LastCurationDate   = Column(Date)
     CreationDate       = Column(Date)
+    population_id      = Column(Integer, ForeignKey('populations.id'))
     population         = relationship("Population",
                                       backref="snps")
     study              = relationship("Study",
@@ -163,6 +164,7 @@ class Study(Base):
                                     back_populates="studies")
     snp_count        = Column(String)
     imputed          = Column(Boolean)
+    population_id    = Column(Integer, ForeignKey('populations.id'))
     population       = relationship("Population",
                                     backref="studies")
     total            = Column(Integer)
