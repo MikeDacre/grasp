@@ -52,9 +52,11 @@ You can now initialize the grasp database:
 
    grasp init study_file grasp_file
 
-The study file is available in this repository (`grasp2_studies.txt <https://raw.githubusercontent.com/MikeDacre/grasp/master/grasp2_studies.txt>`_)
+The study file is available in this repository (`grasp2_studies.txt.gz <https://raw.githubusercontent.com/MikeDacre/grasp/master/grasp2_studies.txt.gz>`_)
 It is just a copy of the official `GRASP List of Studies <https://grasp.nhlbi.nih.gov/downloads/GRASP2_List_Of_Studies.xlsx>`_
 converted to text and with an additional index that provides a numeric index for the non pubmed indexed studies.
+
+Both files can be gzipped or bzipped.
 
 The grasp file is the raw unzipped file from the project page:
 `GRASP2fullDataset <https://s3.amazonaws.com/NHLBI_Public/GRASP/GraspFullDataset2.zip>`_
