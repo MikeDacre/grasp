@@ -148,10 +148,13 @@ Simple usage:
 
   # SNP dataframe creation can be shortcut with the q.get_pheno_pop_snps function
   eur_t2d_snps = q.get_pheno_pop_snps(pheno="Type 2 diabetes (T2D)", pop="European", pandas=True)
+  afr_t2d_snps = q.get_pheno_pop_snps(pheno=[afr_t2d_studies], pandas=True)
+  # afr_t2d_studies is a filtered list of studies containing only the studies you want
 
   # Filter both by pval
   eur_t2d_snps = eur_t2d_snps[eur_t2d_snps.pval < 1e-8]
   afr_t2d_snps = afr_t2d_snps[eur_t2d_snps.pval < 1e-8]
+  
 
 Columns
 =======
@@ -160,203 +163,203 @@ It helps to know beforehand the relevant phenotypes, populations and columns, so
 
 Phenotypes
 ----------
-
- 'Asthma',
-   'Pulmonary',
-   'Chronic lung disease',
-   'Inflammation',
-   'Quantitative trait(s)',
-   'Gene expression (protein)',
-   'Protein expression',
-   'Blood-related',
-   'Cell line',
-   'Cancer',
-   'Endometrial cancer',
-   'Reproductive',
-   'Gender',
-   'Female',
-   'Treatment response',
-   'Physical activity',
-   'Eye-related',
-   'Type 2 diabetes (T2D)',
-   'Gene expression (RNA)',
-   'Neuro',
-   'Methylation',
-   'Epigenetics',
-   'Behavioral',
-   'Bipolar disorder',
-   'Breast cancer',
-   'Drug response',
-   'CVD risk factor (CVD RF)',
-   'Lipids',
-   'C-reactive protein (CRP)',
-   'Serum',
-   'Mortality',
-   'Pregnancy-related',
-   'Infection',
-   'Tuberculosis',
-   'HIV/AIDS',
-   'Surgery',
-   'Heart',
-   'Cardiovascular disease (CVD)',
-   'Myocardial infarction (MI)',
-   'Thyroid cancer',
-   'Thyroid',
-   'Hormonal',
-   'Developmental',
-   'Aging',
-   'Menopause',
-   'Oral-related',
-   'Bone-related',
-   'Dental',
-   'Adverse drug reaction (ADR)',
-   'Immune-related',
-   'Stroke',
-   'Blood cancer',
-   'Leukemia',
-   'Lymphoma',
-   'Systemic lupus erythematosus (SLE)',
-   'Pancreatic cancer',
-   'Pancreas',
-   'Lung cancer',
-   'Blood pressure',
-   'Type 1 diabetes (T1D)',
-   'Arthritis',
-   'Rheumatoid arthritis',
-   "Crohn's disease",
-   'Wound',
-   'Gastrointestinal',
-   'Colorectal cancer',
-   'Gallbladder cancer',
-   'Sleep',
-   'Skin-related',
-   'Esophageal cancer',
-   'Nasal',
-   'Anthropometric',
-   'Imaging',
-   'Weight',
-   'Body mass index',
-   'Plasma',
-   'Subclinical CVD',
-   'Male',
-   'Prostate cancer',
-   'Schizophrenia',
-   'Addiction',
-   'Smoking',
-   'Epilepsy',
-   'Adipose-related',
-   'Urinary',
-   'Cancer-related',
-   'Environment',
-   "Huntington's disease",
-   'Hepatic',
-   'Social',
-   'Renal',
-   'Stone',
-   'Muscle-related',
-   "Grave's disease",
-   'Autism',
-   'Congenital',
-   'Glaucoma',
-   'Platelet',
-   "Alzheimer's disease",
-   'Diet-related',
-   "Parkinson's disease",
-   'Venous',
-   'Thrombosis',
-   'Depression',
-   'Aneurysm',
-   'Arterial',
-   'Cognition',
-   'Attention-deficit/hyperactivity disorder (ADHD)',
-   'Multiple sclerosis (MS)',
-   'Cystic fibrosis',
-   'Brain cancer',
-   'Amyotrophic lateral sclerosis (ALS)',
-   'Chronic kidney disease',
-   'Musculoskeletal',
-   'Alcohol',
-   'Vaccine',
-   'Influenza',
-   'Hepatitis',
-   'Oral cancer',
-   'Coronary heart disease (CHD)',
-   'Smallpox',
-   'Renal cancer',
-   'Atrial fibrillation',
-   'Hair',
-   'Gallstones',
-   'Sickle cell anemia',
-   'Anemia',
-   'Height',
-   'miRNA',
-   'Movement-related',
-   'Anthrax',
-   'Valve',
-   'Age-related macular degeneration (ARMD)',
-   'Menarche',
-   'Ovarian cancer',
-   'Liver cancer',
-   'Vasculitis',
-   'Ulcerative colitis',
-   'Narcotics',
-   'Chronic obstructive pulmonary disease (COPD)',
-   'Salmonella',
-   'Obsessive-compulsive disorder (OCD)',
-   'Pain',
-   'Radiation',
-   'Allergy',
-   'Myasthenia gravis',
-   'Gastric cancer',
-   'Hearing',
-   'Heart rate',
-   'Kidney cancer',
-   'Nasal cancer',
-   'Cardiomyopathy',
-   'Bleeding disorder',
-   'Hemophilia',
-   'Calcium',
-   'Skin cancer',
-   'Melanoma',
-   'Cervical cancer',
-   'Rectal cancer',
-   'Bone cancer',
-   'Testicular cancer',
-   'Celiac disease',
-   'Heart failure',
-   'Graft-versus-host',
-   'Bladder cancer',
-   'Mood disorder',
-   'General health',
-   'Emphysema',
-   'Cytotoxicity',
-   'T2D-related',
-   'Treatment-related',
-   'Upper airway tract cancer',
-   'Uterine cancer',
-   'Uterine fibroids',
-   'Manic depression',
-   'Basal cell cancer',
-   'Blood',
-   'CVD',
-   'Drug treatment',
-   ' Allergy'
+- 
+- Asthma
+- Pulmonary
+- Chronic lung disease
+- Inflammation
+- Quantitative trait(s)
+- Gene expression (protein)
+- Protein expression
+- Blood-related
+- Cell line
+- Cancer
+- Endometrial cancer
+- Reproductive
+- Gender
+- Female
+- Treatment response
+- Physical activity
+- Eye-related
+- Type 2 diabetes (T2D)
+- Gene expression (RNA)
+- Neuro
+- Methylation
+- Epigenetics
+- Behavioral
+- Bipolar disorder
+- Breast cancer
+- Drug response
+- CVD risk factor (CVD RF)
+- Lipids
+- C-reactive protein (CRP)
+- Serum
+- Mortality
+- Pregnancy-related
+- Infection
+- Tuberculosis
+- HIV/AIDS
+- Surgery
+- Heart
+- Cardiovascular disease (CVD)
+- Myocardial infarction (MI)
+- Thyroid cancer
+- Thyroid
+- Hormonal
+- Developmental
+- Aging
+- Menopause
+- Oral-related
+- Bone-related
+- Dental
+- Adverse drug reaction (ADR)
+- Immune-related
+- Stroke
+- Blood cancer
+- Leukemia
+- Lymphoma
+- Systemic lupus erythematosus (SLE)
+- Pancreatic cancer
+- Pancreas
+- Lung cancer
+- Blood pressure
+- Type 1 diabetes (T1D)
+- Arthritis
+- Rheumatoid arthritis
+- "Crohns disease"
+- Wound
+- Gastrointestinal
+- Colorectal cancer
+- Gallbladder cancer
+- Sleep
+- Skin-related
+- Esophageal cancer
+- Nasal
+- Anthropometric
+- Imaging
+- Weight
+- Body mass index
+- Plasma
+- Subclinical CVD
+- Male
+- Prostate cancer
+- Schizophrenia
+- Addiction
+- Smoking
+- Epilepsy
+- Adipose-related
+- Urinary
+- Cancer-related
+- Environment
+- "Huntingtons disease"
+- Hepatic
+- Social
+- Renal
+- Stone
+- Muscle-related
+- "Graves disease"
+- Autism
+- Congenital
+- Glaucoma
+- Platelet
+- "Alzheimers disease"
+- Diet-related
+- "Parkinsons disease"
+- Venous
+- Thrombosis
+- Depression
+- Aneurysm
+- Arterial
+- Cognition
+- Attention-deficit/hyperactivity disorder (ADHD)
+- Multiple sclerosis (MS)
+- Cystic fibrosis
+- Brain cancer
+- Amyotrophic lateral sclerosis (ALS)
+- Chronic kidney disease
+- Musculoskeletal
+- Alcohol
+- Vaccine
+- Influenza
+- Hepatitis
+- Oral cancer
+- Coronary heart disease (CHD)
+- Smallpox
+- Renal cancer
+- Atrial fibrillation
+- Hair
+- Gallstones
+- Sickle cell anemia
+- Anemia
+- Height
+- miRNA
+- Movement-related
+- Anthrax
+- Valve
+- Age-related macular degeneration (ARMD)
+- Menarche
+- Ovarian cancer
+- Liver cancer
+- Vasculitis
+- Ulcerative colitis
+- Narcotics
+- Chronic obstructive pulmonary disease (COPD)
+- Salmonella
+- Obsessive-compulsive disorder (OCD)
+- Pain
+- Radiation
+- Allergy
+- Myasthenia gravis
+- Gastric cancer
+- Hearing
+- Heart rate
+- Kidney cancer
+- Nasal cancer
+- Cardiomyopathy
+- Bleeding disorder
+- Hemophilia
+- Calcium
+- Skin cancer
+- Melanoma
+- Cervical cancer
+- Rectal cancer
+- Bone cancer
+- Testicular cancer
+- Celiac disease
+- Heart failure
+- Graft-versus-host
+- Bladder cancer
+- Mood disorder
+- General health
+- Emphysema
+- Cytotoxicity
+- T2D-related
+- Treatment-related
+- Upper airway tract cancer
+- Uterine cancer
+- Uterine fibroids
+- Manic depression
+- Basal cell cancer
+- Blood
+- CVD
+- Drug treatment
+- Allergy
 
 Populations
 ============
 
-   'Hispanic',
-   'European',
-   'Mixed',
-   'African',
-   'Asian',
-   'Unspecified',
-   'Indian/South Asian',
-   'Micronesian',
-   'Arab/ME',
-   'Native',
-   'Filipino',
-   'Indonesian'
+- Hispanic
+- European
+- Mixed
+- African
+- Asian
+- Unspecified
+- Indian/South Asian
+- Micronesian
+- Arab/ME
+- Native
+- Filipino
+- Indonesian
 
 SNP Columns
 ===========
@@ -365,39 +368,73 @@ SNP Columns
 | Column             | Description                     |
 +====================+=================================+
 | ConservPredTFBS    | ConservPredTFBS                 |
++--------------------+---------------------------------+
 | CreationDate       | CreationDate                    |
++--------------------+---------------------------------+
 | EqtlMethMetabStudy | EqtlMethMetabStudy              |
++--------------------+---------------------------------+
 | HUPfield           | HUPfield                        |
++--------------------+---------------------------------+
 | HumanEnhancer      | HumanEnhancer                   |
++--------------------+---------------------------------+
 | InGene             | InGene                          |
++--------------------+---------------------------------+
 | InLincRNA          | InLincRNA                       |
++--------------------+---------------------------------+
 | InMiRNA            | InMiRNA                         |
++--------------------+---------------------------------+
 | InMiRNABS          | InMiRNABS                       |
++--------------------+---------------------------------+
 | LSSNP              | LS-SNP                          |
++--------------------+---------------------------------+
 | LastCurationDate   | LastCurationDate                |
++--------------------+---------------------------------+
 | NHLBIkey           | NHLBIkey                        |
++--------------------+---------------------------------+
 | NearestGene        | NearestGene                     |
++--------------------+---------------------------------+
 | ORegAnno           | ORegAnno                        |
++--------------------+---------------------------------+
 | PolyPhen2          | PolyPhen2                       |
++--------------------+---------------------------------+
 | RNAedit            | RNAedit                         |
++--------------------+---------------------------------+
 | SIFT               | SIFT                            |
++--------------------+---------------------------------+
 | UniProt            | UniProt                         |
++--------------------+---------------------------------+
 | chrom              | chr(hg19)                       |
++--------------------+---------------------------------+
 | dbSNPClinStatus    | dbSNPClinStatus                 |
++--------------------+---------------------------------+
 | dbSNPMAF           | dbSNPMAF                        |
++--------------------+---------------------------------+
 | dbSNPfxn           | dbSNPfxn                        |
++--------------------+---------------------------------+
 | dbSNPinfo          | dbSNPalleles/het/se             |
++--------------------+---------------------------------+
 | dbSNPvalidation    | dbSNPvalidation                 |
++--------------------+---------------------------------+
 | id                 | ID (generated from NHLBIKey)    |
++--------------------+---------------------------------+
 | paper_loc          | LocationWithinPaper             |
++--------------------+---------------------------------+
 | phenotypes         | Link to phenotypes              |
++--------------------+---------------------------------+
 | population         | Link to population table        |
++--------------------+---------------------------------+
 | population_id      | Primary key of population table |
++--------------------+---------------------------------+
 | pos                | pos(hg19)                       |
++--------------------+---------------------------------+
 | primary_pheno      | Phenotype                       |
++--------------------+---------------------------------+
 | pval               | Pvalue                          |
++--------------------+---------------------------------+
 | snpid              | SNPid(dbSNP134)                 |
++--------------------+---------------------------------+
 | study              | Link to study table             |
++--------------------+---------------------------------+
 | study_id           | Primary key of the study table  |
 +--------------------+---------------------------------+
 
@@ -408,55 +445,105 @@ Study Columns
 | Column           | Description                                                         |
 +==================+=====================================================================+
 | african          | African ancestry                                                    |
++------------------+---------------------------------------------------------------------+
 | arab             | Arab/ME                                                             |
++------------------+---------------------------------------------------------------------+
 | author           | 1st_author                                                          |
++------------------+---------------------------------------------------------------------+
 | datepub          | DatePub                                                             |
++------------------+---------------------------------------------------------------------+
 | east_asian       | East Asian                                                          |
++------------------+---------------------------------------------------------------------+
 | european         | European                                                            |
++------------------+---------------------------------------------------------------------+
 | filipino         | Filipino                                                            |
++------------------+---------------------------------------------------------------------+
 | grasp_ver        | GRASPversion?                                                       |
++------------------+---------------------------------------------------------------------+
 | hispanic         | Hispanic                                                            |
++------------------+---------------------------------------------------------------------+
 | id               | ID                                                                  |
++------------------+---------------------------------------------------------------------+
 | imputed          | From "Platform [SNPs passing QC]"                                   |
++------------------+---------------------------------------------------------------------+
 | in_nhgri         | In NHGRI GWAS catalog (8/26/14)?                                    |
++------------------+---------------------------------------------------------------------+
 | indonesian       | Indonesian                                                          |
++------------------+---------------------------------------------------------------------+
 | journal          | Journal                                                             |
++------------------+---------------------------------------------------------------------+
 | locations        | Specific place(s) mentioned for samples                             |
++------------------+---------------------------------------------------------------------+
 | mf               | Includes male/female only analyses in discovery and/or replication? |
++------------------+---------------------------------------------------------------------+
 | mf_only          | Exclusively male or female study?                                   |
++------------------+---------------------------------------------------------------------+
 | micronesian      | Micronesian                                                         |
++------------------+---------------------------------------------------------------------+
 | mixed            | Mixed                                                               |
++------------------+---------------------------------------------------------------------+
 | native           | Native                                                              |
++------------------+---------------------------------------------------------------------+
 | noresults        | No results flag                                                     |
++------------------+---------------------------------------------------------------------+
 | pheno_desc       | Phenotype description                                               |
++------------------+---------------------------------------------------------------------+
 | phenotypes       | Phenotype categories assigned                                       |
++------------------+---------------------------------------------------------------------+
 | platforms        | Platform [SNPs passing QC]                                          |
++------------------+---------------------------------------------------------------------+
 | pmid             | PubmedID                                                            |
++------------------+---------------------------------------------------------------------+
 | population       | GWAS description link to table                                      |
++------------------+---------------------------------------------------------------------+
 | population_id    | Primary key of population table                                     |
++------------------+---------------------------------------------------------------------+
 | qtl              | IsEqtl/meQTL/pQTL/gQTL/Metabolmics?                                 |
++------------------+---------------------------------------------------------------------+
 | rep_african      | African ancestry.1                                                  |
++------------------+---------------------------------------------------------------------+
 | rep_arab         | Arab/ME.1                                                           |
++------------------+---------------------------------------------------------------------+
 | rep_east_asian   | East Asian.1                                                        |
++------------------+---------------------------------------------------------------------+
 | rep_european     | European.1                                                          |
++------------------+---------------------------------------------------------------------+
 | rep_filipino     | Filipino.1                                                          |
++------------------+---------------------------------------------------------------------+
 | rep_hispanic     | Hispanic.1                                                          |
++------------------+---------------------------------------------------------------------+
 | rep_indonesian   | Indonesian.1                                                        |
++------------------+---------------------------------------------------------------------+
 | rep_micronesian  | Micronesian.1                                                       |
++------------------+---------------------------------------------------------------------+
 | rep_mixed        | Mixed.1                                                             |
++------------------+---------------------------------------------------------------------+
 | rep_native       | Native.1                                                            |
++------------------+---------------------------------------------------------------------+
 | rep_south_asian  | Indian/South Asian.1                                                |
++------------------+---------------------------------------------------------------------+
 | rep_unpecified   | Unspec.1                                                            |
++------------------+---------------------------------------------------------------------+
 | replication_size | Replication Sample Size                                             |
++------------------+---------------------------------------------------------------------+
 | results          | #results                                                            |
++------------------+---------------------------------------------------------------------+
 | sample_size      | Initial Sample Size                                                 |
++------------------+---------------------------------------------------------------------+
 | snp_count        | From "Platform [SNPs passing QC]"                                   |
++------------------+---------------------------------------------------------------------+
 | snps             | Link to all SNPs in this study                                      |
++------------------+---------------------------------------------------------------------+
 | south_asian      | Indian/South Asian                                                  |
++------------------+---------------------------------------------------------------------+
 | title            | Study                                                               |
++------------------+---------------------------------------------------------------------+
 | total            | Total Discovery + Replication sample size                           |
++------------------+---------------------------------------------------------------------+
 | total_disc       | Total discovery samples                                             |
++------------------+---------------------------------------------------------------------+
 | total_rep        | Total replication samples                                           |
++------------------+---------------------------------------------------------------------+
 | unpecified       | Unspec                                                              |
 +------------------+---------------------------------------------------------------------+
 
