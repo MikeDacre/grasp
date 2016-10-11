@@ -2,7 +2,7 @@
 Functions for managing the GRASP database.
 
        Created: 2016-10-08
- Last modified: 2016-10-10 23:51
+ Last modified: 2016-10-10 23:56
 
 """
 import re
@@ -46,7 +46,7 @@ def get_session(echo=False):
     return Session(), engine
 
 
-def initialize_database(study_file, grasp_file, commit_every=100000,
+def initialize_database(study_file, grasp_file, commit_every=250000,
                         progress=True):
     """Create the database quickly.
 
