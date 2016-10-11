@@ -6,7 +6,8 @@ Version: 0.1 (alpha)
 
 This module contains a Python 3 API to work with the GRASP database. The
 database must be downloaded and initialized locally. The default is to use an
-sqlite backend, but postgresql is more efficient.
+sqlite backend, but postgresql or mysql may be used also; these two are slower
+to initialize (longer write times), but they may be faster on indexed reads.
 
 The GRASP project is a SNP-level index of over 2000 GWAS datasets. It is very
 useful, but difficult to batch query as study descriptions are heterogenous and

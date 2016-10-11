@@ -67,7 +67,8 @@ setup(
     keywords='grasp sqlalchemy',
 
     requires=['sqlalchemy', 'pandas', 'tqdm'],
-    install_requires=['sqlalchemy', 'pandas', 'tqdm', 'python-dateutil'],
+    install_requires=['sqlalchemy', 'pandas', 'tqdm', 'python-dateutil',
+                      'psycopg2'],
     packages=['grasp'],
     scripts=scpts,
     cmdclass={'install': CustomInstall},
