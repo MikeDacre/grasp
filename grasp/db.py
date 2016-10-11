@@ -2,7 +2,7 @@
 Functions for managing the GRASP database.
 
        Created: 2016-10-08
- Last modified: 2016-10-11 08:50
+ Last modified: 2016-10-11 09:35
 
 """
 import re
@@ -63,10 +63,14 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
     platforms   = {}
     populations = {}
 
+    # Correction tables
+    pop_correction = {'European/Unspecified': 'European'}
+
     # Create tables
     _, engine = get_session()
-    print('Creating database tables, this may take a while if the old',
-          'database is large.')
+    print('Dropping and creating database tables, this may take a while if',
+          'the old database is large. If using sqlite, you can just delete',
+          'the file to speed up this step.')
     Base.metadata.drop_all(engine)
     Base.metadata.create_all(engine)
     print('Tables created.')
@@ -144,6 +148,10 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
             # Get population description
             try:
                 pop = f[19].strip()
+                try:
+                    pop = pop_correction[pop]
+                except KeyError:
+                    pass
                 if pop not in populations:
                     conn.execute(pop_ins.values(population=pop))
                     populations[pop] = conn.execute(
@@ -265,6 +273,8 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
             # Get population description
             try:
                 pop = f[23].strip()
+                if pop in pop_correction:
+                    pop = pop_correction[pop]
                 if pop not in populations:
                     conn.execute(pop_ins.values(population=pop))
                     populations[pop] = conn.execute(
@@ -298,6 +308,7 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
                 'pos':              int(f[6]),
                 'population_id':    population,
                 'population':       population,
+                'study_id':         study,
                 'study':            study,
                 'study_snpid':      f[8],
                 'paper_loc':        f[9],

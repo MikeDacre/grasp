@@ -2,7 +2,7 @@
 Table descriptions in SQLAlchemy ORM.
 
        Created: 2016-10-08
- Last modified: 2016-10-11 08:26
+ Last modified: 2016-10-11 11:34
 
 """
 from sqlalchemy import Table, Column, Index, ForeignKey
@@ -60,8 +60,9 @@ class SNP(Base):
     population_id      = Column(Integer, ForeignKey('populations.id'))
     population         = relationship("Population",
                                       backref="snps")
+    study_id           = Column(Integer, ForeignKey('studies.id'))
     study              = relationship("Study",
-                                      backref="snps")
+                                      back_populates="snps")
     study_snpid        = Column(String)
     paper_loc          = Column(String)
     primary_pheno      = Column(String)
@@ -100,7 +101,9 @@ class SNP(Base):
         'HUPfield':            'HUPfield',
         'LastCurationDate':    'LastCurationDate',
         'CreationDate':        'CreationDate',
+        'population_id':       'Primary key of population table',
         'population':          'Link to population table',
+        'study_id':            'Primary key of the study table',
         'study':               'Link to study table',
         'study_snpid':         'SNPid(in paper)',
         'paper_loc':           'LocationWithinPaper',
@@ -148,6 +151,8 @@ class Study(Base):
     noresults        = Column(Boolean)
     results          = Column(Integer)
     qtl              = Column(Boolean)
+    snps             = relationship("SNP",
+                                    back_populates='study')
     pheno_desc       = Column(String, index=True)
     phenotypes       = relationship("Phenotype",
                                     secondary=study_pheno_assoc,
@@ -205,6 +210,7 @@ class Study(Base):
         'noresults':        'No results flag',
         'results':          '#results',
         'qtl':              'IsEqtl/meQTL/pQTL/gQTL/Metabolmics?',
+        'snps':             'Link to all SNPs in this study',
         'pheno_desc':       'Phenotype description',
         'phenotypes':       'Phenotype categories assigned',
         'datepub':          'DatePub',
@@ -217,6 +223,7 @@ class Study(Base):
         'platforms':        'Platform [SNPs passing QC]',
         'snp_count':        'From "Platform [SNPs passing QC]"',
         'imputed':          'From "Platform [SNPs passing QC]"',
+        'population_id':    'Primary key of population table',
         'population':       'GWAS description, link to table',
         'total':            'Total Discovery + Replication sample size',
         'total_disc':       'Total discovery samples',
