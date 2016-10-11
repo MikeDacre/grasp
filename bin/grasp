@@ -9,7 +9,7 @@ A Simple GRASP (grasp.nhlbi.nih.gov) API based on SQLAlchemy and Pandas
   ORGANIZATION: Stanford University
        LICENSE: MIT License, property of Stanford, use as you wish
        CREATED: 2016-11-08
- Last modified: 2016-10-10 15:02
+ Last modified: 2016-10-10 18:04
 
    DESCRIPTION: This is the front-end to a python grasp api, intended to allow
                 easy database creation and simple querying.
@@ -124,9 +124,10 @@ def main(argv=None):
 
     # Initialize the database
     init = subparsers.add_parser('init', help="Initialize the database")
-    init.add_argument('db_file',
-                      help="File to write the database to")
-    init.add_argument('grasp_file', nargs='?',
+    init.add_argument('study_file',
+                      help="GRASP study file from: " +
+                      "github.com/MikeDacre/grasp/blob/master/grasp2_studies.txt")
+    init.add_argument('grasp_file',
                       help="GRASP tab delimeted file")
     init.add_argument('-p', '--progress', action='store_true',
                       help="Display a progress bar")
@@ -144,11 +145,9 @@ def main(argv=None):
 
     if args.modes == 'init':
         sys.stderr.write("Initializing\n")
-        if os.path.exists(args.db_file):
-            os.remove(args.db_file)
-        grasp_file = args.grasp_file if args.grasp_file else sys.stdin
-        db.initialize_database(grasp_file, dbfile=args.db_file,
-                            progress=args.progress)
+        db.initialize_database(args.study_file, args.grasp_file,
+                               progress=args.progress)
+
     elif args.modes == 'config':
         # Use tab completion
         t = tabCompleter()

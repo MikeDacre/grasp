@@ -2,7 +2,7 @@
 Table descriptions in SQLAlchemy ORM.
 
        Created: 2016-10-08
- Last modified: 2016-10-10 12:13
+ Last modified: 2016-10-10 18:00
 
 """
 from sqlalchemy import Table, Column, Index, ForeignKey
@@ -18,15 +18,21 @@ Base = declarative_base()
 #                             Association Tables                              #
 ###############################################################################
 
-pheno_assoc_table = Table(
-    'pheno_association', Base.metadata,
+snp_pheno_assoc = Table(
+    'snp_pheno_association', Base.metadata,
     Column('snp_id', Integer, ForeignKey('snps.id')),
     Column('pheno_id', Integer, ForeignKey('phenos.id'))
 )
 
-plat_assoc_table = Table(
-    'platform_association', Base.metadata,
-    Column('snp_id', Integer, ForeignKey('snps.id')),
+study_pheno_assoc = Table(
+    'study_pheno_association', Base.metadata,
+    Column('study_id', Integer, ForeignKey('studies.id')),
+    Column('pheno_id', Integer, ForeignKey('phenos.id'))
+)
+
+study_plat_assoc = Table(
+    'study_platform_association', Base.metadata,
+    Column('study_id', Integer, ForeignKey('studies.id')),
     Column('platform_id', Integer, ForeignKey('platforms.id'))
 )
 
@@ -42,93 +48,203 @@ class SNP(Base):
 
     __tablename__ = "snps"
 
-    id                          = Column(Integer, primary_key=True, index=True)
-    SNPid                       = Column(String, index=True)
-    chrom                       = Column(String, index=True)
-    pos                         = Column(Integer, index=True)
-    HUPfield                    = Column(String)
-    LastCurationDate            = Column(Date)
-    CreationDate                = Column(Date)
-    PMID                        = Column(String)
-    SNPid_paper                 = Column(String)
-    LocationWithinPaper         = Column(String)
-    Pvalue                      = Column(Float)
-    Phenotype                   = Column(String)
-    PaperPhenotypeDescription   = Column(String)
-    phenotypes                  = relationship("Phenotype",
-                                               secondary=pheno_assoc_table,
-                                               back_populates="snps")
-    DatePub                     = Column(Date)
-    InNHGRIcat                  = Column(Boolean)
-    Journal                     = Column(String)
-    Title                       = Column(String)
-    MF_analysis                 = Column(Boolean)
-    MF_analysis_exclusive       = Column(Boolean)
-    sample_desc                 = Column(String)
-    rep_sample_desc             = Column(String)
-    platforms                   = relationship("Platform",
-                                               secondary=plat_assoc_table,
-                                               back_populates="snps")
-    snp_count                   = Column(String)
-    imputed                     = Column(Boolean)
-    population_desc             = Column(String,
-                                         ForeignKey('populations.population'))
-    population                  = relationship("Population",
-                                               backref="snps")
-    TotalSamples                = Column(Integer)
-    TotalDiscoverySamples       = Column(Integer)
-    EuropeanDiscovery           = Column(Integer)
-    AfricanDiscovery            = Column(Integer)
-    EastAsianDiscovery          = Column(String)
-    IndianSouthAsianDiscovery   = Column(String)
-    HispanicDiscovery           = Column(String)
-    NativeDiscovery             = Column(String)
-    MicronesianDiscovery        = Column(String)
-    ArabMEDiscovery             = Column(String)
-    MixedDiscovery              = Column(String)
-    UnspecifiedDiscovery        = Column(String)
-    FilipinoDiscovery           = Column(String)
-    IndonesianDiscovery         = Column(String)
-    Totalreplicationsamples     = Column(String)
-    EuropeanReplication         = Column(String)
-    AfricanReplication          = Column(String)
-    EastAsianReplication        = Column(String)
-    IndianSouthAsianReplication = Column(String)
-    HispanicReplication         = Column(String)
-    NativeReplication           = Column(String)
-    MicronesianReplication      = Column(String)
-    ArabMEReplication           = Column(String)
-    MixedReplication            = Column(String)
-    UnspecifiedReplication      = Column(String)
-    FilipinoReplication         = Column(String)
-    IndonesianReplication       = Column(String)
-    InGene                      = Column(String)
-    NearestGene                 = Column(String)
-    InLincRNA                   = Column(String)
-    InMiRNA                     = Column(String)
-    InMiRNABS                   = Column(String)
-    dbSNPfxn                    = Column(String)
-    dbSNPMAF                    = Column(String)
-    dbSNPalleles                = Column(String)
-    dbSNPvalidation             = Column(String)
-    dbSNPClinStatus             = Column(String)
-    ORegAnno                    = Column(String)
-    ConservPredTFBS             = Column(String)
-    HumanEnhancer               = Column(String)
-    RNAedit                     = Column(String)
-    PolyPhen2                   = Column(String)
-    SIFT                        = Column(String)
-    LSSNP                       = Column(String)
-    UniProt                     = Column(String)
-    EqtlMethMetabStudy          = Column(String)
+    id                 = Column(Integer, primary_key=True, index=True)
+    snpid              = Column(String, index=True)
+    chrom              = Column(String(10))
+    pos                = Column(Integer)
+    NHLBIkey           = Column(String)
+    HUPfield           = Column(String)
+    LastCurationDate   = Column(Date)
+    CreationDate       = Column(Date)
+    population         = relationship("Population",
+                                      backref="snps")
+    study              = relationship("Study",
+                                      backref="snps")
+    study_snpid        = Column(String)
+    paper_loc          = Column(String)
+    pval               = Column(Float)
+    primary_pheno      = Column(String)
+    phenotypes         = relationship("Phenotype",
+                                      secondary=snp_pheno_assoc,
+                                      back_populates="snps")
+    InGene             = Column(String)
+    NearestGene        = Column(String)
+    InLincRNA          = Column(String)
+    InMiRNA            = Column(String)
+    InMiRNABS          = Column(String)
+    dbSNPfxn           = Column(String)
+    dbSNPMAF           = Column(String)
+    dbSNPinfo          = Column(String)
+    dbSNPvalidation    = Column(String)
+    dbSNPClinStatus    = Column(String)
+    ORegAnno           = Column(String)
+    ConservPredTFBS    = Column(String)
+    HumanEnhancer      = Column(String)
+    RNAedit            = Column(String)
+    PolyPhen2          = Column(String)
+    SIFT               = Column(String)
+    LSSNP              = Column(String)
+    UniProt            = Column(String)
+    EqtlMethMetabStudy = Column(String)
 
     Index('chrom_pos', 'chrom', 'pos')
+
+    columns = {
+        'id':                  'ID (generated from NHLBIKey)',
+        'snpid':               'SNPid(dbSNP134)',
+        'chrom':               'chr(hg19)',
+        'pos':                 'pos(hg19)',
+        'NHLBIkey':            'NHLBIkey',
+        'HUPfield':            'HUPfield',
+        'LastCurationDate':    'LastCurationDate',
+        'CreationDate':        'CreationDate',
+        'population':          'Link to population table',
+        'study':               'Link to study table',
+        'study_snpid':         'SNPid(in paper)',
+        'paper_loc':           'LocationWithinPaper',
+        'pval':                'Pvalue',
+        'primary_pheno':       'Phenotype',
+        'phenotypes':          'Link to phenotypes',
+        'InGene':              'InGene',
+        'NearestGene':         'NearestGene',
+        'InLincRNA':           'InLincRNA',
+        'InMiRNA':             'InMiRNA',
+        'InMiRNABS':           'InMiRNABS',
+        'dbSNPfxn':            'dbSNPfxn',
+        'dbSNPMAF':            'dbSNPMAF',
+        'dbSNPinfo':           'dbSNPalleles/het/se',
+        'dbSNPvalidation':     'dbSNPvalidation',
+        'dbSNPClinStatus':     'dbSNPClinStatus',
+        'ORegAnno':            'ORegAnno',
+        'ConservPredTFBS':     'ConservPredTFBS',
+        'HumanEnhancer':       'HumanEnhancer',
+        'RNAedit':             'RNAedit',
+        'PolyPhen2':           'PolyPhen2',
+        'SIFT':                'SIFT',
+        'LSSNP':               'LS-SNP',
+        'UniProt':             'UniProt',
+        'EqtlMethMetabStudy':  'EqtlMethMetabStudy'
+    }
 
     def __repr__(self):
         """Display information about the table."""
         return "{} ({}) <{}:{} pheno: {} total: {} EUR: {} AFR: {}".format(
             self.id, self.SNPid, self.chrom, self.pos, self.Phenotype,
             self.TotalSamples, self.EuropeanDiscovery, self.AfricanDiscovery)
+
+
+class Study(Base):
+
+    """To store study information."""
+
+    __tablename__ = "studies"
+
+    id               = Column(Integer, primary_key=True, index=True)
+    pmid             = Column(String(10))
+    title            = Column(String, index=True)
+    journal          = Column(String(50))
+    author           = Column(String(25))
+    grasp_ver        = Column(Integer)
+    noresults        = Column(Boolean)
+    results          = Column(Integer)
+    qtl              = Column(Boolean)
+    pheno_desc       = Column(String)
+    phenotypes       = relationship("Phenotype",
+                                    secondary=study_pheno_assoc,
+                                    back_populates="studies")
+    datepub          = Column(Date)
+    in_nhgri         = Column(Boolean)
+    locations        = Column(String)
+    mf               = Column(Boolean)
+    mf_only          = Column(Boolean)
+    sample_size      = Column(String)  # Maybe parse this better
+    replication_size = Column(Integer)
+    platforms        = relationship("Platform",
+                                    secondary=study_plat_assoc,
+                                    back_populates="studies")
+    snp_count        = Column(String)
+    imputed          = Column(Boolean)
+    population       = relationship("Population",
+                                    backref="studies")
+    total            = Column(Integer)
+    total_disc       = Column(Integer)
+    european         = Column(Integer)
+    african          = Column(Integer)
+    east_asian       = Column(Integer)
+    south_asian      = Column(Integer)
+    hispanic         = Column(Integer)
+    native           = Column(Integer)
+    micronesian      = Column(Integer)
+    arab             = Column(Integer)
+    mixed            = Column(Integer)
+    unpecified       = Column(Integer)
+    filipino         = Column(Integer)
+    indonesian       = Column(Integer)
+    total_rep        = Column(Integer)
+    rep_european     = Column(Integer)
+    rep_african      = Column(Integer)
+    rep_east_asian   = Column(Integer)
+    rep_south_asian  = Column(Integer)
+    rep_hispanic     = Column(Integer)
+    rep_native       = Column(Integer)
+    rep_micronesian  = Column(Integer)
+    rep_arab         = Column(Integer)
+    rep_mixed        = Column(Integer)
+    rep_unpecified   = Column(Integer)
+    rep_filipino     = Column(Integer)
+    rep_indonesian   = Column(Integer)
+
+    columns = {
+        'id':               'ID',
+        'pmid':             'PubmedID',
+        'title':            'Study',
+        'author':           '1st_author',
+        'journal':          'Journal',
+        'grasp_ver':        'GRASPversion?',
+        'noresults':        'No results flag',
+        'results':          '#results',
+        'qtl':              'IsEqtl/meQTL/pQTL/gQTL/Metabolmics?',
+        'pheno_desc':       'Phenotype description',
+        'phenotypes':       'Phenotype categories assigned',
+        'datepub':          'DatePub',
+        'in_nhgri':         'In NHGRI GWAS catalog (8/26/14)?',
+        'locations':        'Specific place(s) mentioned for samples',
+        'mf':               'Includes male/female only analyses in discovery and/or replication?',
+        'mf_only':          'Exclusively male or female study?',
+        'sample_size':      'Initial Sample Size',
+        'replication_size': 'Replication Sample Size',
+        'platforms':        'Platform [SNPs passing QC]',
+        'snp_count':        'From "Platform [SNPs passing QC]"',
+        'imputed':          'From "Platform [SNPs passing QC]"',
+        'population':       'GWAS description, link to table',
+        'total':            'Total Discovery + Replication sample size',
+        'total_disc':       'Total discovery samples',
+        'european':         'European',
+        'african':          'African ancestry',
+        'east_asian':       'East Asian',
+        'south_asian':      'Indian/South Asian',
+        'hispanic':         'Hispanic',
+        'native':           'Native',
+        'micronesian':      'Micronesian',
+        'arab':             'Arab/ME',
+        'mixed':            'Mixed',
+        'unpecified':       'Unspec',
+        'filipino':         'Filipino',
+        'indonesian':       'Indonesian',
+        'total_rep':        'Total replication samples',
+        'rep_european':     'European.1',
+        'rep_african':      'African ancestry.1',
+        'rep_east_asian':   'East Asian.1',
+        'rep_south_asian':  'Indian/South Asian.1',
+        'rep_hispanic':     'Hispanic.1',
+        'rep_native':       'Native.1',
+        'rep_micronesian':  'Micronesian.1',
+        'rep_arab':         'Arab/ME.1',
+        'rep_mixed':        'Mixed.1',
+        'rep_unpecified':   'Unspec.1',
+        'rep_filipino':     'Filipino.1',
+        'rep_indonesian':   'Indonesian.1'
+    }
 
 
 class Phenotype(Base):
@@ -141,7 +257,10 @@ class Phenotype(Base):
                       index=True)
     category = Column(String, index=True, unique=True)
     snps     = relationship("SNP",
-                            secondary=pheno_assoc_table,
+                            secondary=snp_pheno_assoc,
+                            back_populates="phenotypes")
+    studies  = relationship("Study",
+                            secondary=study_pheno_assoc,
                             back_populates="phenotypes")
 
     def __init__(self, category):
@@ -162,8 +281,8 @@ class Platform(Base):
     id       = Column(Integer, primary_key=True, autoincrement=True,
                       index=True)
     platform = Column(String, index=True, unique=True)
-    snps     = relationship("SNP",
-                            secondary=plat_assoc_table,
+    studies  = relationship("Study",
+                            secondary=study_plat_assoc,
                             back_populates="platforms")
 
     def __init__(self, platform):
