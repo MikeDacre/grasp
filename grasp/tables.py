@@ -2,17 +2,19 @@
 Table descriptions in SQLAlchemy ORM.
 
        Created: 2016-10-08
- Last modified: 2016-10-11 11:34
+ Last modified: 2016-10-12 16:23
 
 """
 from sqlalchemy import Table, Column, Index, ForeignKey
 from sqlalchemy import BigInteger, Integer, String, Float, Date, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
+from flags import Flags
 
 __all__ = ["SNP", "Phenotype", "Platform", "Population"]
 
 Base = declarative_base()
+
 
 ###############################################################################
 #                             Association Tables                              #
@@ -50,10 +52,10 @@ class SNP(Base):
 
     id                 = Column(BigInteger, primary_key=True, index=True)
     snpid              = Column(String, index=True)
-    chrom              = Column(String(10))
-    pos                = Column(Integer)
+    chrom              = Column(String(10), index=True)
+    pos                = Column(Integer, index=True)
     pval               = Column(Float, index=True)
-    NHLBIkey           = Column(String)
+    NHLBIkey           = Column(String, index=True)
     HUPfield           = Column(String)
     LastCurationDate   = Column(Date)
     CreationDate       = Column(Date)
@@ -65,7 +67,7 @@ class SNP(Base):
                                       back_populates="snps")
     study_snpid        = Column(String)
     paper_loc          = Column(String)
-    primary_pheno      = Column(String)
+    primary_pheno      = Column(String, index=True)
     phenotypes         = relationship("Phenotype",
                                       secondary=snp_pheno_assoc,
                                       back_populates="snps")
@@ -143,11 +145,11 @@ class Study(Base):
     __tablename__ = "studies"
 
     id               = Column(Integer, primary_key=True, index=True)
-    pmid             = Column(String(100))
+    pmid             = Column(String(100), index=True)
     title            = Column(String, index=True)
     journal          = Column(String)
     author           = Column(String)
-    grasp_ver        = Column(Integer)
+    grasp_ver        = Column(Integer, index=True)
     noresults        = Column(Boolean)
     results          = Column(Integer)
     qtl              = Column(Boolean)
@@ -162,8 +164,6 @@ class Study(Base):
     locations        = Column(String)
     mf               = Column(Boolean)
     mf_only          = Column(Boolean)
-    sample_size      = Column(String)  # Maybe parse this better
-    replication_size = Column(String)
     platforms        = relationship("Platform",
                                     secondary=study_plat_assoc,
                                     back_populates="studies")
@@ -174,6 +174,7 @@ class Study(Base):
                                     backref="studies")
     total            = Column(Integer)
     total_disc       = Column(Integer)
+    disc_pops        = Column(Integer, index=True)  # Will hold a bitwise flag
     european         = Column(Integer)
     african          = Column(Integer)
     east_asian       = Column(Integer)
@@ -187,6 +188,7 @@ class Study(Base):
     filipino         = Column(Integer)
     indonesian       = Column(Integer)
     total_rep        = Column(Integer)
+    rep_pops         = Column(Integer, index=True)  # Will hold a bitwise flag
     rep_european     = Column(Integer)
     rep_african      = Column(Integer)
     rep_east_asian   = Column(Integer)
@@ -199,6 +201,8 @@ class Study(Base):
     rep_unpecified   = Column(Integer)
     rep_filipino     = Column(Integer)
     rep_indonesian   = Column(Integer)
+    sample_size      = Column(String)  # Maybe parse this better
+    replication_size = Column(String)  # Maybe parse this better
 
     columns = {
         'id':               'ID',
@@ -218,8 +222,6 @@ class Study(Base):
         'locations':        'Specific place(s) mentioned for samples',
         'mf':               'Includes male/female only analyses in discovery and/or replication?',
         'mf_only':          'Exclusively male or female study?',
-        'sample_size':      'Initial Sample Size',
-        'replication_size': 'Replication Sample Size',
         'platforms':        'Platform [SNPs passing QC]',
         'snp_count':        'From "Platform [SNPs passing QC]"',
         'imputed':          'From "Platform [SNPs passing QC]"',
@@ -227,6 +229,7 @@ class Study(Base):
         'population':       'GWAS description, link to table',
         'total':            'Total Discovery + Replication sample size',
         'total_disc':       'Total discovery samples',
+        'disc_pop':         'A bitwise flag that shows presence/absence of discovery populations',
         'european':         'European',
         'african':          'African ancestry',
         'east_asian':       'East Asian',
@@ -240,6 +243,7 @@ class Study(Base):
         'filipino':         'Filipino',
         'indonesian':       'Indonesian',
         'total_rep':        'Total replication samples',
+        'rep_pop':          'A bitwise flag that shows presence/absence of replication populations',
         'rep_european':     'European.1',
         'rep_african':      'African ancestry.1',
         'rep_east_asian':   'East Asian.1',
@@ -251,7 +255,9 @@ class Study(Base):
         'rep_mixed':        'Mixed.1',
         'rep_unpecified':   'Unspec.1',
         'rep_filipino':     'Filipino.1',
-        'rep_indonesian':   'Indonesian.1'
+        'rep_indonesian':   'Indonesian.1',
+        'sample_size':      'Initial Sample Size, string description of integer population counts above.',
+        'replication_size': 'Replication Sample Size, string description of integer population counts above.',
     }
 
     def __repr__(self):

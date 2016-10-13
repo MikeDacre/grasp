@@ -2,7 +2,7 @@
 Simple Python GRASP API
 .......................
 
-Version: 0.1.1a (alpha)
+Version: 0.1.2a (alpha)
 
 This module contains a Python 3 API to work with the GRASP database. The
 database must be downloaded and initialized locally. The default is to use an
@@ -34,16 +34,22 @@ Use the standard installation procedure:
   cd grasp
   python ./setup.py install --user
 
-This code requires a local grasp database. You can choose to use sqlite or
-postgresql/mysql as the backend. A script, `grasp`, is provided in `bin` and
-should automatically be installed to your `PATH`. It makes these setup steps
-easy.
+This code requires a grasp database. Currently sqlite/postgesql/mysql are
+supported. Mysql and postgresql can be remote (but must be set up with this
+tool), sqlite is local.
+
+Database configuration is stored in a config file that lives by default in
+~/.grasp.  This path is set in `config.py` and can be changed there is needed. 
+
+A script, `grasp`, is provided in `bin` and should automatically be installed
+to your `PATH`.  It contains functions to set up your database config and to
+initialize the grasp database easily, making the initial steps trivial.
 
 To set up your database configuration, run:
 
 .. code:: shell
 
-  grasp config -i
+  grasp config --init
 
 This will prompt you for your database config options and create a file at
 `~/.grasp` with those options saved.
@@ -56,14 +62,16 @@ You can now initialize the grasp database:
 
 The study file is available in this repository (`grasp2_studies.txt.gz <https://raw.githubusercontent.com/MikeDacre/grasp/master/grasp2_studies.txt.gz>`_)
 It is just a copy of the official `GRASP List of Studies <https://grasp.nhlbi.nih.gov/downloads/GRASP2_List_Of_Studies.xlsx>`_
-converted to text and with an additional index that provides a numeric index for the non pubmed indexed studies.
+converted to text and with an additional index that provides a numeric index
+for the non pubmed indexed studies.
 
 Both files can be gzipped or bzipped.
 
 The grasp file is the raw unzipped file from the project page:
 `GRASP2fullDataset <https://s3.amazonaws.com/NHLBI_Public/GRASP/GraspFullDataset2.zip>`_
 
-The database takes about 40 minutes to build on a desktop machine and uses about 2GB of space.
+The database takes about 40 minutes to build on a desktop machine and uses
+about 2GB of space.
 
 =====
 Usage
@@ -72,9 +80,33 @@ Usage
 The code is based on SQLAlchemy, so you should read their `ORM Query tutorial <http://docs.sqlalchemy.org/en/latest/orm/tutorial.html#querying>`_
 to know how to use this well.
 
+It is important to note that the point of this software is to make bulk data access from the GRASP
+DB easy, SQLAlchemy makes this very easy indeed. However, to do complex comparisons,
+SQLAlchemy is very slow. As such, the best way to use this software is to use
+SQLAlchemy functions to bulk retrieve study lists, and then to directly get
+a pandas dataframe of SNPs from those lists.
+
+If you try to do SQLAlchemy intersect, join, or merge operations in order to get
+SNP lists that way, you will find that it is very slow.
+
+The simplest way to get a dataframe from SQLAlchemy is like this:
+
+.. code:: python
+
+   df = pandas.read_sql(session.query(SNP).statement)
+
+Note that if you use this exact query, the dataframe will be too big to be
+useful, this is just an example of syntax. All of the functions in grasp.query
+provide ways to get dataframes back from grasp with ease. `get_snps()`
+(described below) is the best example of this.
+
 We provide 4 tables:
 
-Study, Phenotype, Platform, and SNP
+Study, Phenotype, Platform, and SNP (as well as several association tables)
+
+Tables are defined in grasp.tables
+Database setup functions are in grasp.db
+Query tools for easy data manipulation are in grasp.query.
 
 Simple usage:
 

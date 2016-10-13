@@ -40,7 +40,7 @@ class CustomInstall(install):
 
 setup(
     name='grasp',
-    version='0.1.1a',
+    version='0.1.2a',
     description='A Simple GRASP (grasp.nhlbi.nih.gov) API based on SQLAlchemy and Pandas',
     long_description=long_description,
     url='https://github.com/MikeDacre/grasp',
@@ -67,8 +67,8 @@ setup(
 
     keywords='grasp sqlalchemy',
 
-    requires=['sqlalchemy', 'pandas', 'tqdm'],
-    install_requires=['sqlalchemy', 'pandas', 'tqdm', 'python-dateutil'],
+    install_requires=['sqlalchemy', 'pandas', 'tqdm', 'python-dateutil',
+                      'pyflags'],
     packages=['grasp'],
     scripts=scpts,
     cmdclass={'install': CustomInstall},

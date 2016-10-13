@@ -9,7 +9,7 @@ A Simple GRASP (grasp.nhlbi.nih.gov) API based on SQLAlchemy and Pandas
   ORGANIZATION: Stanford University
        LICENSE: MIT License, property of Stanford, use as you wish
        CREATED: 2016-11-08
- Last modified: 2016-10-10 23:51
+ Last modified: 2016-10-12 16:57
 
    DESCRIPTION: This is the front-end to a python grasp api, intended to allow
                 easy database creation and simple querying.
@@ -18,92 +18,12 @@ A Simple GRASP (grasp.nhlbi.nih.gov) API based on SQLAlchemy and Pandas
 
 ===============================================================================
 """
-from __future__ import print_function
 import os
 import sys
-import readline
 import argparse
 
 from grasp import db
 from grasp import config
-
-try:
-    input = raw_input
-except NameError:
-    pass
-
-###############################################################################
-#                                 Completion                                  #
-###############################################################################
-
-
-class tabCompleter(object):
-    """
-    A tab completer that can either complete from
-    the filesystem or from a list.
-
-    Taken from:
-        https://gist.github.com/iamatypeofwalrus/5637895
-    """
-
-    def _listdir(self, root):
-        "List directory 'root' appending the path separator to subdirs."
-        res = []
-        for name in os.listdir(root):
-            path = os.path.join(root, name)
-            if os.path.isdir(path):
-                name += os.sep
-            res.append(name)
-        return res
-
-    def _complete_path(self, path=None):
-        "Perform completion of filesystem path."
-        if not path:
-            return os.listdir('.')
-        path = os.path.expanduser(path)
-        dirname, rest = os.path.split(path)
-        tmp = dirname if dirname else '.'
-        res = [os.path.join(dirname, p)
-               for p in os.listdir(tmp) if p.startswith(rest)]
-        # more than one match, or single match which does not exist (typo)
-        if len(res) > 1 or not os.path.exists(path):
-            return res
-        # resolved to a single directory, so return list of files below it
-        if os.path.isdir(path):
-            return [os.path.join(path, p) for p in os.listdir(path)]
-        # exact file match terminates this completion
-        return [path + ' ']
-
-    def pathCompleter(self, test, state):
-        """
-        This is the tab completer for systems paths.
-        Only tested on *nix systems
-        """
-        line = readline.get_line_buffer()
-        if not line:
-            return self._complete_path('.')[state]
-        else:
-            return self._complete_path(line)[state]
-
-    def createListCompleter(self,ll):
-        """
-        This is a closure that creates a method that autocompletes from
-        the given list.
-
-        Since the autocomplete function can't be given a list to complete from
-        a closure is used to create the listCompleter function with a list to complete
-        from.
-        """
-        def listCompleter(text,state):
-            line   = readline.get_line_buffer()
-
-            if not line:
-                return [c + " " for c in ll][state]
-
-            else:
-                return [c + " " for c in ll if c.startswith(line)][state]
-
-        self.listCompleter = listCompleter
 
 
 ###############################################################################
@@ -136,10 +56,16 @@ def main(argv=None):
     conf = subparsers.add_parser('conf', aliases=['config'],
                                  help="Manage local config")
     cgrp = conf.add_mutually_exclusive_group()
-    cgrp.add_argument('-i', '--init', dest='cinit', action='store_true',
-                      help="Initialize the config with default settings.")
-    cgrp.add_argument('-p', '--path', dest='cpath', action='store_true',
-                      help="Display the path to the config file")
+    cgrp.add_argument('--db', dest='cdb', metavar=None,
+                      choices=['sqlite', 'postgresql', 'mysql'],
+                      help="Set the current database platform.")
+    cgrp.add_argument('--get-path', dest='cdpath', action='store_true',
+                      help="Change the sqlite file path")
+    cgrp.add_argument('--set-path', dest='cpath', metavar='PATH',
+                      help="Change the sqlite file path")
+    cgrp.add_argument('--init', dest='cinit', action='store_true',
+                      help="Initialize the config with default settings. " +
+                      "Will ERASE your old config!")
 
     args = parser.parse_args(argv)
 
@@ -153,52 +79,33 @@ def main(argv=None):
                                progress=args.no_progress)
 
     elif args.modes == 'config':
-        # Use tab completion
-        t = tabCompleter()
-        readline.set_completer_delims('\t')
-        readline.parse_and_bind("tab: complete")
-        if args.cinit:
-            print("Do you want to initialize your config at {}"
-                  .format(config.CONFIG_FILE))
-            print("This will erase your current configuration (if it exists)")
-            choice = input("Initialize config? [y/N] ").strip().lower()
-            if not choice == 'y':
-                return
+        if args.cdb:
+            if not os.path.exists(config.CONFIG_FILE):
+                print('Config does not exist, you must create it first.',
+                      'Initializing config creation...')
+                config.init_config_interactive()
+            config.config['DEFAULT']['DatabaseType'] = args.cdb
+            config.write_config()
 
-            # Get choices with tab completion
-            t.createListCompleter(["sqlite", "mysql", "postgresql"])
-            readline.set_completer(t.listCompleter)
-            print("What kind of database do you want to use?")
-            db_type = input('sqlite/postgres/mysql ').strip().lower()
+        elif args.cinit:
+            config.init_config_interactive()
 
-            # Initialize for sqlite
-            if db_type.lower() == 'sqlite':
-                readline.set_completer(t.pathCompleter)
-                print("Where would you like to put the db file?")
-                file_path = os.path.expanduser(input('PATH: [~/grasp.db] ')).strip(' ').lower()
-                if not file_path:
-                    file_path = os.path.expanduser('~/grasp.db')
-                host, user, passwd, host_string = '', '', '', ''
-
-            # Initialize for other
-            elif db_type.lower() == 'postgresql' or db_type.lower() == 'mysql':
-                readline.set_completer()
-                print("Your database needs to already be configured for "
-                      "it to work. i.e. the user, password, and database need "
-                      "to already exist. Please enter the required info below.")
-                host = input('hostname [localhost]: ')
-                host = host if host else 'localhost'
-                user = input('username: ')
-                passwd = input('password: ')
-                file_path = ''
-            else:
-                print("Invalid db choice {}".format(db_type))
-                return 1
-            config.init_config(db_type, file_path, host, user, passwd)
-        elif args.cpath:
+        elif args.cdpath:
             print("{}".format(config.CONFIG_FILE))
+
+        elif args.cpath:
+            if not os.path.isfile(args.cpath):
+                print("{} Does not exist.".format(args.cpath))
+                ans = input('Use anyway? [y/N] ')
+                if not ans == 'y':
+                    return
+            config.config['sqlite']['DatabaseFile'] = os.path.abspath(
+                args.cpath
+            )
+            config.write_config()
+
         else:
-            config.print_help()
+            conf.print_help()
     else:
         parser.print_help()
 

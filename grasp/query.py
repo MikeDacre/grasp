@@ -2,7 +2,7 @@
 A mix of functions to make querying the database faster.
 
        Created: 2016-49-11 07:10
- Last modified: 2016-10-11 14:15
+ Last modified: 2016-10-12 18:52
 
 """
 import pandas as pd
@@ -10,25 +10,52 @@ import pandas as pd
 from . import db
 from . import tables as t
 
-def get_pheno_pop_snps(pheno, pop='', pandas=True):
+
+###############################################################################
+#                        Retrieve SNPs and Study Data                         #
+###############################################################################
+
+
+def get_studies(pheno=None, pop=None):
+    """Return a list of studies filtered by phenotype and population.
+
+    :pheno:   The phenotype of interest, string or list of strings.
+    :pop:     The population of interest, string or list of strings.
+    :returns: A list of studies.
+
+    """
+    s, _ = db.get_session()
+
+    if pheno and isinstance(pheno, str):
+        pheno = [pheno]
+    if pop and isinstance(pop, str):
+        pop = [pop]
+    if pheno:
+        phenos = s.query(t.Phenotype).filter(
+            t.Phenotype.category.in_(pheno)).all()
+        if pop:
+            return [i for i in phenos.studies
+                    if i.population.population in pop]
+        else:
+            return [i for i in phenos.studies]
+    elif pop:
+        pops = s.query(t.Population).filter(
+            t.Population.population.in_(pop)).all()
+        return [i for i in pops.studies]
+
+
+def get_snps(studies, pandas=True):
     """Return a list of SNPs in a single population in a single phenotype.
 
-    :pheno:   The phenotype of interest or a filtered study list.
-    :pop:     The population of interest.
+    :studies: A list of studies.
     :pandas:  Return a dataframe instead of a list of SNP objects.
     :returns: Either a DataFrame or list of SNP objects.
 
     """
     s, e = db.get_session()
-    if isinstance(pheno, list):
-        if isinstance(pheno[0], t.Study):
-            studies = [i.id for i in pheno
-                       if i.population.population == pop]
-    else:
-        phenos = s.query(t.Phenotype).filter(
-            t.Phenotype.category == pheno).first()
-        studies = [i.id for i in phenos.studies
-                   if i.population.population == pop]
+    if isinstance(studies[0], t.Study):
+        studies = [i.id for i in studies]
+
     if pandas:
         return pd.read_sql(
             s.query(
@@ -43,3 +70,41 @@ def get_pheno_pop_snps(pheno, pop='', pandas=True):
         return s.query(t.SNP).filter(
             t.SNP.study_id.in_(studies)
         ).all()
+
+###############################################################################
+#                          Get Category Information                           #
+###############################################################################
+
+
+def get_phenotypes(list_only=False, dictionary=False):
+    """Return all phenotypes from the phenotype table.
+
+    :list_only:  Return a simple text list instead of a list of Phenotype
+                 objects.
+    :dictionary: Return a dictionary of phenotype=>ID
+    """
+    s, _ = db.get_session()
+    q = s.query(t.Phenotype).order_by('category').all()
+    if list_only:
+        return [i.category for i in q]
+    elif dictionary:
+        return {i.category: i.id for i in q}
+    else:
+        return q
+
+
+def get_populations(list_only=False, dictionary=False):
+    """Return all phenotypes from the phenotype table.
+
+    :list_only:  Return a simple text list instead of a list of Phenotype
+                 objects.
+    :dictionary: Return a dictionary of population=>ID
+    """
+    s, _ = db.get_session()
+    q =  s.query(t.Population).all()
+    if list_only:
+        return [i.population for i in q]
+    elif dictionary:
+        return {i.population: i.id for i in q}
+    else:
+        return q
