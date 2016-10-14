@@ -2,13 +2,14 @@
 Functions for managing the GRASP database.
 
        Created: 2016-10-08
- Last modified: 2016-10-13 18:01
+ Last modified: 2016-10-14 10:04
 
 """
 import re
 import sys
 import bz2
 import gzip
+from html import unescape as _unescape
 
 # Date parsing
 from datetime import date
@@ -268,7 +269,7 @@ def get_session(echo=False):
 
 
 def initialize_database(study_file, grasp_file, commit_every=250000,
-                        progress=True):
+                        progress=False):
     """Create the database quickly.
 
     :study_file:   Tab delimited GRASP study file, available here:
@@ -334,20 +335,21 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
     plstudy_records = []
 
     # Platform parsing regex
-    plat_parser = re.compile(r'^([^[]*)\[([^]]+)\]?(.*)')
+    plat_parser  = re.compile(r'^([^[]*)\[([^]]+)\]?(.*)')
 
     # Build study information from study file
-    sys.stdout.write('Parsing study information.\n')
+    print('Parsing study information.')
     with _open_zipped(study_file) as fin:
         # Drop header
         fin.readline()
 
-        pbar = tqdm(total=2083, unit='studies')
+        if progress:
+            pbar = tqdm(total=2083, unit='studies')
         for line in fin:
             f = line.rstrip().split('\t')
 
             # Get primary phenotype
-            ppheno = f[7].strip()
+            ppheno = _cleanstr(f[7].strip())
             if ppheno not in pphenos:
                 pheno_records.append({'phenotype': ppheno,
                                       'id': pheno_id})
@@ -358,14 +360,14 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
             pheno_cats = f[8].strip().split(';')
             our_phenos = []
             for pcat in pheno_cats:
-                pcat.strip()
+                pcat = pcat.strip()
                 if not pcat:
                     continue
                 if pcat not in phenos:
                     pcat_records.append({
-                        'id': pcat_id,
+                        'id':       pcat_id,
                         'category': pcat,
-                        'alias': pheno_synonyms[pcat],
+                        'alias':    pheno_synonyms[pcat],
                     })
                     phenos[pcat] = pcat_id
                     pcat_id += 1
@@ -382,7 +384,7 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
                 for plat in plats:
                     plat = plat.strip()
                     if plat not in platforms:
-                        plat_records.append({'id': plat_id,
+                        plat_records.append({'id':       plat_id,
                                              'platform': plat})
                         platforms[plat] = plat_id
                         plat_id += 1
@@ -399,7 +401,7 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
                 except KeyError:
                     pass
                 if pop not in populations:
-                    pop_records.append({'id': pop_id,
+                    pop_records.append({'id':         pop_id,
                                         'population': pop})
                     populations[pop] = pop_id
                     pop_id += 1
@@ -464,8 +466,8 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
             # Create study
             study_records.append({
                 'id':               int(f[0]),
-                'author':           f[1].strip(),
-                'pmid':             f[2].strip(),
+                'author':           _cleanstr(f[1]),
+                'pmid':             _cleanstr(f[2]),
                 'grasp_ver':        1 if '1.0' in f[3] else 2,
                 'noresults':        True if f[4] else False,
                 'results':          int(f[5]),
@@ -476,13 +478,13 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
                 'phenotype_cats':   our_phenos,
                 'datepub':          _get_date(f[9]),
                 'in_nhgri':         _get_bool(f[10]),
-                'journal':          f[11].strip(),
-                'title':            f[12].strip(),
-                'locations':        f[13].strip(),
+                'journal':          _cleanstr(f[11]),
+                'title':            _cleanstr(f[12]),
+                'locations':        _cleanstr(f[13]),
                 'mf':               _get_bool(f[14]),
                 'mf_only':          _get_bool(f[15]),
-                'sample_size':      f[16].strip(),
-                'replication_size': f[17].strip(),
+                'sample_size':      _cleanstr(f[16]),
+                'replication_size': _cleanstr(f[17]),
                 'platforms':        platforms,
                 'snp_count':        snp_count,
                 'imputed':          imputed,
@@ -490,7 +492,7 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
                 'population':       population,
                 'total':            int(f[20]),
                 'total_disc':       int(f[21]),
-                'disc_pop':         disc_pop,
+                'disc_pops':        int(disc_pop),
                 'european':         int(f[22]) if l > 22 and f[22] else None,
                 'african':          int(f[23]) if l > 23 and f[23] else None,
                 'east_asian':       int(f[24]) if l > 24 and f[24] else None,
@@ -504,7 +506,7 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
                 'filipino':         int(f[32]) if l > 32 and f[32] else None,
                 'indonesian':       int(f[33]) if l > 33 and f[33] else None,
                 'total_rep':        int(f[34]) if l > 34 and f[34] else None,
-                'rep_pop':          rep_pop,
+                'rep_pops':         int(rep_pop),
                 'rep_european':     int(f[35]) if l > 35 and f[35] else None,
                 'rep_african':      int(f[36]) if l > 36 and f[36] else None,
                 'rep_east_asian':   int(f[37]) if l > 37 and f[37] else None,
@@ -521,14 +523,16 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
 
             # Create association records
             for i in our_phenos:
-                phstudy_records.append({'study_id' : int(f[0]), 'pheno_id' : i})
+                phstudy_records.append({'study_id':    int(f[0]),
+                                        'pheno_id':    i})
             for i in our_platforms:
-                plstudy_records.append({'study_id' : int(f[0]), 'platform_id' : i})
+                plstudy_records.append({'study_id':    int(f[0]),
+                                        'platform_id': i})
 
             pbar.update()
 
     pbar.close()
-    sys.stdout.write('Writing study information...\n')
+    print('Writing study information...')
     conn.execute(pheno_ins, pheno_records)
     conn.execute(pcat_ins, pcat_records)
     conn.execute(plat_ins, plat_records)
@@ -536,6 +540,7 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
     conn.execute(study_ins, study_records)
     conn.execute(phstudy_ins, phstudy_records)
     conn.execute(plstudy_ins, plstudy_records)
+    print('Done')
 
     # Reinitialize lists for main GRASP parser
     pheno_records   = []
@@ -561,19 +566,19 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
         'Association of intronic sequence variant in the gene encoding spleen tyrosine kinase with susceptibility to vascular dementia':              10,
     }
 
-    sys.stdout.write('Parsing SNP information\n')
+    sys.stdout.write('Parsing SNP information...\n')
     with _open_zipped(grasp_file, encoding='latin1') as fin:
         # Drop header
         fin.readline()
 
         if progress:
-            pbar = tqdm(total=8864718, unit='snps')
+            pbar = tqdm(total=8864717, unit='snps')
 
         for line in fin:
             f = line.rstrip().split('\t')
 
             # Get primary phenotype
-            ppheno = f[11].strip()
+            ppheno = _cleanstr(f[11])
             # These are poorly curated, so there is no need to use a
             # separate table for them.
             #  if ppheno not in pphenos:
@@ -590,14 +595,14 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
             pheno_cats = f[13].strip().split(';')
             our_phenos = []
             for pcat in pheno_cats:
-                pcat.strip()
+                pcat = pcat.strip()
                 if not pcat:
                     continue
                 if pcat not in phenos:
                     pcat_records.append({
-                        'id': pcat_id,
+                        'id':       pcat_id,
                         'category': pcat,
-                        'alias': pheno_synonyms[pcat],
+                        'alias':    pheno_synonyms[pcat],
                     })
                     phenos[pcat] = pcat_id
                     pcat_id += 1
@@ -611,7 +616,7 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
                 except KeyError:
                     pass
                 if pop not in populations:
-                    pop_records.append({'id': pop_id,
+                    pop_records.append({'id':         pop_id,
                                         'population': pop})
                     populations[pop] = pop_id
                     pop_id += 1
@@ -681,7 +686,7 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
                 if progress:
                     tqdm.write('Writing rows...')
                 else:
-                    sys.stdout.write('Writing rows...\n')
+                    print('Writing rows...')
                 if pcat_records:
                     conn.execute(pcat_ins, pcat_records)
                 if plat_records:
@@ -693,7 +698,7 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
                 if progress:
                     tqdm.write('{} rows written'.format(rows))
                 else:
-                    sys.stdout.write('{} rows written\n'.format(rows))
+                    print('{} rows written'.format(rows))
                 count         = commit_every-1
                 pcat_records  = []
                 plat_records  = []
@@ -706,16 +711,27 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
 
         # Final insert
         pbar.close()
-        sys.stdout.write('Writing final rows...\n')
+        print('Writing final rows...')
         conn.execute(snp_ins, snp_records)
         conn.execute(phsnp_ins, phsnp_records)
-        sys.stdout.write('{} rows written\n'.format(rows))
-        sys.stdout.write('Done!\n')
+        print('{} rows written'.format(rows))
+        print('Done!')
 
 
 ###############################################################################
 #                              Support Functions                              #
 ###############################################################################
+
+
+_rmspace  = re.compile(r'  +')
+def _cleanstr(string):
+    """Run a few regex cleanups on a string.
+
+    Strips unneeded starting characters, trims extra spaces, and converts
+    mangeled unicode characters from Excel into readable characters.
+    """
+    cstr = _rmspace.sub(' ', string.strip(" \"'"))
+    return _unescape(cstr)
 
 
 def _split_mesy_list(string):

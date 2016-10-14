@@ -2,7 +2,7 @@
 Table descriptions in SQLAlchemy ORM.
 
        Created: 2016-10-08
- Last modified: 2016-10-13 18:00
+ Last modified: 2016-10-14 09:07
 
 """
 from sqlalchemy import Table, Column, Index, ForeignKey
@@ -166,8 +166,6 @@ class Study(Base):
                                     back_populates='study')
     phenotype_id     = Column(Integer, ForeignKey('phenos.id'),
                               index=True)
-    phenotype_desc   = Column(String, ForeignKey('phenos.phenotype'),
-                              index=True)
     phenotype        = relationship("Phenotype",
                                     back_populates="studies")
     phenotype_cats   = relationship("PhenoCats",
@@ -229,7 +227,6 @@ class Study(Base):
         'results':          '#results',
         'qtl':              'IsEqtl/meQTL/pQTL/gQTL/Metabolmics?',
         'snps':             'Link to all SNPs in this study',
-        'pheno_desc':       'Phenotype description',
         'phenotypes':       'Phenotype categories assigned',
         'datepub':          'DatePub',
         'in_nhgri':         'In NHGRI GWAS catalog (8/26/14)?',
@@ -243,7 +240,7 @@ class Study(Base):
         'population':       'GWAS description, link to table',
         'total':            'Total Discovery + Replication sample size',
         'total_disc':       'Total discovery samples',
-        'disc_pop':         'A bitwise flag that shows presence/absence of discovery populations',
+        'disc_pops':        'A bitwise flag that shows presence/absence of discovery populations',
         'european':         'European',
         'african':          'African ancestry',
         'east_asian':       'East Asian',
@@ -257,7 +254,7 @@ class Study(Base):
         'filipino':         'Filipino',
         'indonesian':       'Indonesian',
         'total_rep':        'Total replication samples',
-        'rep_pop':          'A bitwise flag that shows presence/absence of replication populations',
+        'rep_pops':         'A bitwise flag that shows presence/absence of replication populations',
         'rep_european':     'European.1',
         'rep_african':      'African ancestry.1',
         'rep_east_asian':   'East Asian.1',
