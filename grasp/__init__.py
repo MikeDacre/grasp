@@ -5,8 +5,10 @@ A Simple GRASP (grasp.nhlbi.nih.gov) API based on SQLAlchemy and Pandas
 __version__ = '0.1.3a'
 
 # Import ourself
-from . import tables
 from . import db
-from .tables import SNP, Phenotype, Platform, Population
+from . import query
+from . import tables
+from .db import get_session
+from .tables import SNP, Phenotype, PhenoCats, Platform, Population
 
-__all__ = ["tables", "db"]
+__all__ = ["tables", "query", "db"]

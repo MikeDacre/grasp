@@ -2,39 +2,47 @@
 Table descriptions in SQLAlchemy ORM.
 
        Created: 2016-10-08
- Last modified: 2016-10-14 09:07
+ Last modified: 2016-10-14 13:15
 
 """
-from sqlalchemy import Table, Column, Index, ForeignKey
-from sqlalchemy import BigInteger, Integer, String, Float, Date, Boolean
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship
+from sqlalchemy import Table as _Table
+from sqlalchemy import Column as _Column
+from sqlalchemy import Index as _Index
+from sqlalchemy import ForeignKey as _ForeignKey
+from sqlalchemy import BigInteger as _BigInteger
+from sqlalchemy import Integer as _Integer
+from sqlalchemy import String as _String
+from sqlalchemy import Float as _Float
+from sqlalchemy import Date as _Date
+from sqlalchemy import _Boolean as _Boolean
+from sqlalchemy.ext.declarative import declarative_base as _declarative_base
+from sqlalchemy.orm import relationship as _relationship
 
 __all__ = ["SNP", "Phenotype", "PhenoCats", "Platform", "Population"]
 
-Base = declarative_base()
+Base = _declarative_base()
 
 
 ###############################################################################
 #                             Association Tables                              #
 ###############################################################################
 
-snp_pheno_assoc = Table(
+snp_pheno_assoc = _Table(
     'snp_pheno_association', Base.metadata,
-    Column('snp_id', BigInteger, ForeignKey('snps.id')),
-    Column('pheno_id', Integer, ForeignKey('pheno_cats.id'))
+    _Column('snp_id', _BigInteger, _ForeignKey('snps.id')),
+    _Column('pheno_id', _Integer, _ForeignKey('pheno_cats.id'))
 )
 
-study_pheno_assoc = Table(
+study_pheno_assoc = _Table(
     'study_pheno_association', Base.metadata,
-    Column('study_id', Integer, ForeignKey('studies.id')),
-    Column('pheno_id', Integer, ForeignKey('pheno_cats.id'))
+    _Column('study_id', _Integer, _ForeignKey('studies.id')),
+    _Column('pheno_id', _Integer, _ForeignKey('pheno_cats.id'))
 )
 
-study_plat_assoc = Table(
+study_plat_assoc = _Table(
     'study_platform_association', Base.metadata,
-    Column('study_id', Integer, ForeignKey('studies.id')),
-    Column('platform_id', Integer, ForeignKey('platforms.id'))
+    _Column('study_id', _Integer, _ForeignKey('studies.id')),
+    _Column('platform_id', _Integer, _ForeignKey('platforms.id'))
 )
 
 
@@ -49,48 +57,48 @@ class SNP(Base):
 
     __tablename__ = "snps"
 
-    id                 = Column(BigInteger, primary_key=True, index=True)
-    snpid              = Column(String, index=True)
-    chrom              = Column(String(10), index=True)
-    pos                = Column(Integer, index=True)
-    pval               = Column(Float, index=True)
-    NHLBIkey           = Column(String, index=True)
-    HUPfield           = Column(String)
-    LastCurationDate   = Column(Date)
-    CreationDate       = Column(Date)
-    population_id      = Column(Integer, ForeignKey('populations.id'))
-    population         = relationship("Population",
+    id                 = _Column(_BigInteger, primary_key=True, index=True)
+    snpid              = _Column(_String, index=True)
+    chrom              = _Column(_String(10), index=True)
+    pos                = _Column(_Integer, index=True)
+    pval               = _Column(_Float, index=True)
+    NHLBIkey           = _Column(_String, index=True)
+    HUPfield           = _Column(_String)
+    LastCurationDate   = _Column(_Date)
+    CreationDate       = _Column(_Date)
+    population_id      = _Column(_Integer, _ForeignKey('populations.id'))
+    population         = _relationship("Population",
                                       backref="snps")
-    study_id           = Column(Integer, ForeignKey('studies.id'))
-    study              = relationship("Study",
+    study_id           = _Column(_Integer, _ForeignKey('studies.id'))
+    study              = _relationship("Study",
                                       back_populates="snps")
-    study_snpid        = Column(String)
-    paper_loc          = Column(String)
-    phenotype_desc     = Column(String, index=True)
-    phenotype_cats     = relationship("PhenoCats",
+    study_snpid        = _Column(_String)
+    paper_loc          = _Column(_String)
+    phenotype_desc     = _Column(_String, index=True)
+    phenotype_cats     = _relationship("PhenoCats",
                                       secondary=snp_pheno_assoc,
                                       back_populates="snps")
-    InGene             = Column(String)
-    NearestGene        = Column(String)
-    InLincRNA          = Column(String)
-    InMiRNA            = Column(String)
-    InMiRNABS          = Column(String)
-    dbSNPfxn           = Column(String)
-    dbSNPMAF           = Column(String)
-    dbSNPinfo          = Column(String)
-    dbSNPvalidation    = Column(String)
-    dbSNPClinStatus    = Column(String)
-    ORegAnno           = Column(String)
-    ConservPredTFBS    = Column(String)
-    HumanEnhancer      = Column(String)
-    RNAedit            = Column(String)
-    PolyPhen2          = Column(String)
-    SIFT               = Column(String)
-    LSSNP              = Column(String)
-    UniProt            = Column(String)
-    EqtlMethMetabStudy = Column(String)
+    InGene             = _Column(_String)
+    NearestGene        = _Column(_String)
+    InLincRNA          = _Column(_String)
+    InMiRNA            = _Column(_String)
+    InMiRNABS          = _Column(_String)
+    dbSNPfxn           = _Column(_String)
+    dbSNPMAF           = _Column(_String)
+    dbSNPinfo          = _Column(_String)
+    dbSNPvalidation    = _Column(_String)
+    dbSNPClinStatus    = _Column(_String)
+    ORegAnno           = _Column(_String)
+    ConservPredTFBS    = _Column(_String)
+    HumanEnhancer      = _Column(_String)
+    RNAedit            = _Column(_String)
+    PolyPhen2          = _Column(_String)
+    SIFT               = _Column(_String)
+    LSSNP              = _Column(_String)
+    UniProt            = _Column(_String)
+    EqtlMethMetabStudy = _Column(_String)
 
-    Index('chrom_pos', 'chrom', 'pos')
+    _Index('chrom_pos', 'chrom', 'pos')
 
     columns = {
         'id':                  'ID (generated from NHLBIKey)',
@@ -153,68 +161,68 @@ class Study(Base):
 
     __tablename__ = "studies"
 
-    id               = Column(Integer, primary_key=True, index=True)
-    pmid             = Column(String(100), index=True)
-    title            = Column(String, index=True)
-    journal          = Column(String)
-    author           = Column(String)
-    grasp_ver        = Column(Integer, index=True)
-    noresults        = Column(Boolean)
-    results          = Column(Integer)
-    qtl              = Column(Boolean)
-    snps             = relationship("SNP",
+    id               = _Column(_Integer, primary_key=True, index=True)
+    pmid             = _Column(_String(100), index=True)
+    title            = _Column(_String, index=True)
+    journal          = _Column(_String)
+    author           = _Column(_String)
+    grasp_ver        = _Column(_Integer, index=True)
+    noresults        = _Column(_Boolean)
+    results          = _Column(_Integer)
+    qtl              = _Column(_Boolean)
+    snps             = _relationship("SNP",
                                     back_populates='study')
-    phenotype_id     = Column(Integer, ForeignKey('phenos.id'),
+    phenotype_id     = _Column(_Integer, _ForeignKey('phenos.id'),
                               index=True)
-    phenotype        = relationship("Phenotype",
+    phenotype        = _relationship("Phenotype",
                                     back_populates="studies")
-    phenotype_cats   = relationship("PhenoCats",
+    phenotype_cats   = _relationship("PhenoCats",
                                     secondary=study_pheno_assoc,
                                     back_populates="studies")
-    datepub          = Column(Date)
-    in_nhgri         = Column(Boolean)
-    locations        = Column(String)
-    mf               = Column(Boolean)
-    mf_only          = Column(Boolean)
-    platforms        = relationship("Platform",
+    datepub          = _Column(_Date)
+    in_nhgri         = _Column(_Boolean)
+    locations        = _Column(_String)
+    mf               = _Column(_Boolean)
+    mf_only          = _Column(_Boolean)
+    platforms        = _relationship("Platform",
                                     secondary=study_plat_assoc,
                                     back_populates="studies")
-    snp_count        = Column(String)
-    imputed          = Column(Boolean)
-    population_id    = Column(Integer, ForeignKey('populations.id'))
-    population       = relationship("Population",
+    snp_count        = _Column(_String)
+    imputed          = _Column(_Boolean)
+    population_id    = _Column(_Integer, _ForeignKey('populations.id'))
+    population       = _relationship("Population",
                                     backref="studies")
-    total            = Column(Integer)
-    total_disc       = Column(Integer)
-    disc_pops        = Column(Integer, index=True)  # Will hold a bitwise flag
-    european         = Column(Integer)
-    african          = Column(Integer)
-    east_asian       = Column(Integer)
-    south_asian      = Column(Integer)
-    hispanic         = Column(Integer)
-    native           = Column(Integer)
-    micronesian      = Column(Integer)
-    arab             = Column(Integer)
-    mixed            = Column(Integer)
-    unspecified       = Column(Integer)
-    filipino         = Column(Integer)
-    indonesian       = Column(Integer)
-    total_rep        = Column(Integer)
-    rep_pops         = Column(Integer, index=True)  # Will hold a bitwise flag
-    rep_european     = Column(Integer)
-    rep_african      = Column(Integer)
-    rep_east_asian   = Column(Integer)
-    rep_south_asian  = Column(Integer)
-    rep_hispanic     = Column(Integer)
-    rep_native       = Column(Integer)
-    rep_micronesian  = Column(Integer)
-    rep_arab         = Column(Integer)
-    rep_mixed        = Column(Integer)
-    rep_unspecified  = Column(Integer)
-    rep_filipino     = Column(Integer)
-    rep_indonesian   = Column(Integer)
-    sample_size      = Column(String)  # Maybe parse this better
-    replication_size = Column(String)  # Maybe parse this better
+    total            = _Column(_Integer)
+    total_disc       = _Column(_Integer)
+    disc_pops        = _Column(_Integer, index=True)  # Will hold a bitwise flag
+    european         = _Column(_Integer)
+    african          = _Column(_Integer)
+    east_asian       = _Column(_Integer)
+    south_asian      = _Column(_Integer)
+    hispanic         = _Column(_Integer)
+    native           = _Column(_Integer)
+    micronesian      = _Column(_Integer)
+    arab             = _Column(_Integer)
+    mixed            = _Column(_Integer)
+    unspecified       = _Column(_Integer)
+    filipino         = _Column(_Integer)
+    indonesian       = _Column(_Integer)
+    total_rep        = _Column(_Integer)
+    rep_pops         = _Column(_Integer, index=True)  # Will hold a bitwise flag
+    rep_european     = _Column(_Integer)
+    rep_african      = _Column(_Integer)
+    rep_east_asian   = _Column(_Integer)
+    rep_south_asian  = _Column(_Integer)
+    rep_hispanic     = _Column(_Integer)
+    rep_native       = _Column(_Integer)
+    rep_micronesian  = _Column(_Integer)
+    rep_arab         = _Column(_Integer)
+    rep_mixed        = _Column(_Integer)
+    rep_unspecified  = _Column(_Integer)
+    rep_filipino     = _Column(_Integer)
+    rep_indonesian   = _Column(_Integer)
+    sample_size      = _Column(_String)  # Maybe parse this better
+    replication_size = _Column(_String)  # Maybe parse this better
 
     columns = {
         'id':               'ID',
@@ -325,11 +333,11 @@ class Phenotype(Base):
 
     __tablename__ = "phenos"
 
-    id        = Column(Integer, primary_key=True,
+    id        = _Column(_Integer, primary_key=True,
                        index=True)
-    phenotype = Column(String, index=True, unique=True)
-    alias     = Column(String, index=True)
-    studies   = relationship("Study",
+    phenotype = _Column(_String, index=True, unique=True)
+    alias     = _Column(_String, index=True)
+    studies   = _relationship("Study",
                              back_populates="phenotype")
 
     def __repr__(self):
@@ -352,14 +360,14 @@ class PhenoCats(Base):
 
     __tablename__ = "pheno_cats"
 
-    id       = Column(Integer, primary_key=True,
+    id       = _Column(_Integer, primary_key=True,
                       index=True)
-    category = Column(String, index=True, unique=True)
-    alias    = Column(String, index=True)
-    snps     = relationship("SNP",
+    category = _Column(_String, index=True, unique=True)
+    alias    = _Column(_String, index=True)
+    snps     = _relationship("SNP",
                             secondary=snp_pheno_assoc,
                             back_populates="phenotype_cats")
-    studies  = relationship("Study",
+    studies  = _relationship("Study",
                             secondary=study_pheno_assoc,
                             back_populates="phenotype_cats")
 
@@ -383,10 +391,10 @@ class Platform(Base):
 
     __tablename__ = "platforms"
 
-    id       = Column(Integer, primary_key=True,
+    id       = _Column(_Integer, primary_key=True,
                       index=True)
-    platform = Column(String, index=True, unique=True)
-    studies  = relationship("Study",
+    platform = _Column(_String, index=True, unique=True)
+    studies  = _relationship("Study",
                             secondary=study_plat_assoc,
                             back_populates="platforms")
 
@@ -413,9 +421,9 @@ class Population(Base):
 
     __tablename__ = "populations"
 
-    id         = Column(Integer, primary_key=True,
+    id         = _Column(_Integer, primary_key=True,
                         index=True)
-    population = Column(String, index=True, unique=True)
+    population = _Column(_String, index=True, unique=True)
 
     def __init__(self, population):
         """Create self."""

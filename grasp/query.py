@@ -2,13 +2,15 @@
 A mix of functions to make querying the database faster.
 
        Created: 2016-49-11 07:10
- Last modified: 2016-10-12 18:52
+ Last modified: 2016-10-14 13:20
 
 """
-import pandas as pd
+import pandas as _pd
 
-from . import db
+from . import db as _db
 from . import tables as t
+
+__all__ = ["get_studies", "get_snps", "get_phenotypes", "get_populations"]
 
 
 ###############################################################################
@@ -24,7 +26,7 @@ def get_studies(pheno=None, pop=None):
     :returns: A list of studies.
 
     """
-    s, _ = db.get_session()
+    s, _ = _db.get_session()
 
     if pheno and isinstance(pheno, str):
         pheno = [pheno]
@@ -52,12 +54,12 @@ def get_snps(studies, pandas=True):
     :returns: Either a DataFrame or list of SNP objects.
 
     """
-    s, e = db.get_session()
+    s, e = _db.get_session()
     if isinstance(studies[0], t.Study):
         studies = [i.id for i in studies]
 
     if pandas:
-        return pd.read_sql(
+        return _pd.read_sql(
             s.query(
                 t.SNP.id, t.SNP.chrom, t.SNP.pos, t.SNP.snpid,
                 t.SNP.study_snpid, t.SNP.pval, t.SNP.study_id, t.SNP.InGene,
@@ -83,7 +85,7 @@ def get_phenotypes(list_only=False, dictionary=False):
                  objects.
     :dictionary: Return a dictionary of phenotype=>ID
     """
-    s, _ = db.get_session()
+    s, _ = _db.get_session()
     q = s.query(t.Phenotype).order_by('category').all()
     if list_only:
         return [i.category for i in q]
@@ -100,7 +102,7 @@ def get_populations(list_only=False, dictionary=False):
                  objects.
     :dictionary: Return a dictionary of population=>ID
     """
-    s, _ = db.get_session()
+    s, _ = _db.get_session()
     q =  s.query(t.Population).all()
     if list_only:
         return [i.population for i in q]

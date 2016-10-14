@@ -2,37 +2,46 @@
 Functions for managing the GRASP database.
 
        Created: 2016-10-08
- Last modified: 2016-10-14 10:04
+ Last modified: 2016-10-14 13:22
 
 """
-import re
-import sys
+import os as _os
 import bz2
 import gzip
+from re import compile as _recompile
 from html import unescape as _unescape
 
 # Date parsing
-from datetime import date
-from dateutil.parser import parse as dateparse
+from datetime import date as _date
+from dateutil.parser import parse as _dateparse
 
 # Database
-from sqlalchemy import create_engine
-from sqlalchemy.sql import select
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy import create_engine as _create_engine
+from sqlalchemy.sql import select as _select
+from sqlalchemy.orm import sessionmaker as _sessionmaker
 
 # Bitwise flags
-from flags import Flags
+from flags import Flags as _Flags
 
 # Progress bar
-from tqdm import tqdm
+from tqdm import tqdm as _tqdm
 
 # Table Declarations
-from .tables import Base
-from .tables import Study, SNP, Phenotype, PhenoCats, Platform, Population
-from .tables import snp_pheno_assoc, study_pheno_assoc, study_plat_assoc
+from .tables import Base as _Base
+from .tables import Study as _Study
+from .tables import SNP as _SNP
+from .tables import Phenotype as _Phenotype
+from .tables import PhenoCats as _PhenoCats
+from .tables import Platform as _Platform
+from .tables import Population as _Population
+from .tables import snp_pheno_assoc as _snp_pheno_assoc
+from .tables import study_pheno_assoc as _study_pheno_assoc
+from .tables import study_plat_assoc as _study_plat_assoc
 
 # Database config
-from .config import config
+from .config import config as _config
+
+__all__ = ["PopFlag", "get_session", "initialize_database"
 
 
 ###############################################################################
@@ -40,7 +49,7 @@ from .config import config
 ###############################################################################
 
 
-class PopFlag(Flags):
+class PopFlag(_Flags):
 
     """A simplified bitwise flag system for tracking populations."""
 
@@ -253,18 +262,18 @@ pop_correction = {'European/Unspecified': 'European'}
 
 def get_session(echo=False):
     """Return a session and engine, uses config file."""
-    db_type = config['DEFAULT']['DatabaseType']
+    db_type = _config['DEFAULT']['DatabaseType']
     if db_type == 'sqlite':
         engine_string = ('sqlite:///{db_file}'
-                         .format(db_file=config['sqlite']['DatabaseFile']))
+                         .format(db_file=_config['sqlite']['DatabaseFile']))
     else:
         engine_string = ('{type}://{user}:{passwd}@{host}/grasp'
                          .format(type=db_type,
-                                 user=config['other']['DatabaseUser'],
-                                 passwd=config['other']['DatabasePass'],
-                                 host=config['other']['DatabaseHost']))
-    engine  = create_engine(engine_string, echo=echo)
-    Session = sessionmaker(bind=engine)
+                                 user=_config['other']['DatabaseUser'],
+                                 passwd=_config['other']['DatabasePass'],
+                                 host=_config['other']['DatabaseHost']))
+    engine  = _create_engine(engine_string, echo=echo)
+    Session = _sessionmaker(bind=engine)
     return Session(), engine
 
 
@@ -290,20 +299,23 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
     # Create tables
     _, engine = get_session()
     print('Dropping and creating database tables, this may take a while if',
-          'the old database is large. If using sqlite, you can just delete',
-          'the file to speed up this step.')
-    Base.metadata.drop_all(engine)
-    Base.metadata.create_all(engine)
+          'the old database is large.')
+    if _config['DEFAULT']['DatabaseType'] == 'sqlite':
+        cfile =_os.path.isfile(_config['sqlite']['DatabaseFile'])
+        if_os.path.isfile(cfile):
+           _os.remove(cfile)
+    _Base.metadata.drop_all(engine)
+    _Base.metadata.create_all(engine)
     print('Tables created.')
     conn = engine.connect()
 
     # Get tables
-    study_table = Study.__table__
-    snp_table   = SNP.__table__
-    pheno_table = Phenotype.__table__
-    pcat_table  = PhenoCats.__table__
-    plat_table  = Platform.__table__
-    pop_table   = Population.__table__
+    study_table = _Study.__table__
+    snp_table   = _SNP.__table__
+    pheno_table = _Phenotype.__table__
+    pcat_table  = _PhenoCats.__table__
+    plat_table  = _Platform.__table__
+    pop_table   = _Population.__table__
 
     # Create insert statements
     study_ins   = study_table.insert()
@@ -312,9 +324,9 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
     pcat_ins    = pcat_table.insert()
     plat_ins    = plat_table.insert()
     pop_ins     = pop_table.insert()
-    phsnp_ins   = snp_pheno_assoc.insert()
-    phstudy_ins = study_pheno_assoc.insert()
-    plstudy_ins = study_plat_assoc.insert()
+    phsnp_ins   = _snp_pheno_assoc.insert()
+    phstudy_ins = _study_pheno_assoc.insert()
+    plstudy_ins = _study_plat_assoc.insert()
 
     # Unique ID counters
     spare_id = 1
@@ -335,7 +347,7 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
     plstudy_records = []
 
     # Platform parsing regex
-    plat_parser  = re.compile(r'^([^[]*)\[([^]]+)\]?(.*)')
+    plat_parser  = _recompile(r'^([^[]*)\[([^]]+)\]?(.*)')
 
     # Build study information from study file
     print('Parsing study information.')
@@ -344,7 +356,7 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
         fin.readline()
 
         if progress:
-            pbar = tqdm(total=2083, unit='studies')
+            pbar = _tqdm(total=2083, unit='studies')
         for line in fin:
             f = line.rstrip().split('\t')
 
@@ -549,7 +561,7 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
     pop_records     = []
 
     # Get full study info from database for use in SNPs
-    sinfo = conn.execute(select([study_table.c.id, study_table.c.pmid])).fetchall()
+    sinfo = conn.execute(_select([study_table.c.id, study_table.c.pmid])).fetchall()
     studies = {}
     for i, p in sinfo:
         studies[p] = i
@@ -566,13 +578,13 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
         'Association of intronic sequence variant in the gene encoding spleen tyrosine kinase with susceptibility to vascular dementia':              10,
     }
 
-    sys.stdout.write('Parsing SNP information...\n')
+    print('Parsing SNP information...')
     with _open_zipped(grasp_file, encoding='latin1') as fin:
         # Drop header
         fin.readline()
 
         if progress:
-            pbar = tqdm(total=8864717, unit='snps')
+            pbar = _tqdm(total=8864717, unit='snps')
 
         for line in fin:
             f = line.rstrip().split('\t')
@@ -684,7 +696,7 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
                 count -= 1
             else:
                 if progress:
-                    tqdm.write('Writing rows...')
+                    pbar.write('Writing rows...')
                 else:
                     print('Writing rows...')
                 if pcat_records:
@@ -696,7 +708,7 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
                 conn.execute(snp_ins, snp_records)
                 conn.execute(phsnp_ins, phsnp_records)
                 if progress:
-                    tqdm.write('{} rows written'.format(rows))
+                    pbar.write('{} rows written'.format(rows))
                 else:
                     print('{} rows written'.format(rows))
                 count         = commit_every-1
@@ -723,7 +735,7 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
 ###############################################################################
 
 
-_rmspace  = re.compile(r'  +')
+_rmspace  = _recompile(r'  +')
 def _cleanstr(string):
     """Run a few regex cleanups on a string.
 
@@ -767,7 +779,7 @@ def _split_mesy_list(string):
 def _get_date(string):
     """Return datetime date object from string."""
     try:
-        return date.fromordinal(dateparse(string).toordinal())
+        return _date.fromordinal(_dateparse(string).toordinal())
     except ValueError:
         print(string)
         raise
