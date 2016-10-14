@@ -2,16 +2,15 @@
 Table descriptions in SQLAlchemy ORM.
 
        Created: 2016-10-08
- Last modified: 2016-10-12 16:23
+ Last modified: 2016-10-13 16:47
 
 """
 from sqlalchemy import Table, Column, Index, ForeignKey
 from sqlalchemy import BigInteger, Integer, String, Float, Date, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
-from flags import Flags
 
-__all__ = ["SNP", "Phenotype", "Platform", "Population"]
+__all__ = ["SNP", "Phenotype", "PhenoCats", "Platform", "Population"]
 
 Base = declarative_base()
 
@@ -23,13 +22,13 @@ Base = declarative_base()
 snp_pheno_assoc = Table(
     'snp_pheno_association', Base.metadata,
     Column('snp_id', BigInteger, ForeignKey('snps.id')),
-    Column('pheno_id', Integer, ForeignKey('phenos.id'))
+    Column('pheno_id', Integer, ForeignKey('pheno_cats.id'))
 )
 
 study_pheno_assoc = Table(
     'study_pheno_association', Base.metadata,
     Column('study_id', Integer, ForeignKey('studies.id')),
-    Column('pheno_id', Integer, ForeignKey('phenos.id'))
+    Column('pheno_id', Integer, ForeignKey('pheno_cats.id'))
 )
 
 study_plat_assoc = Table(
@@ -67,8 +66,8 @@ class SNP(Base):
                                       back_populates="snps")
     study_snpid        = Column(String)
     paper_loc          = Column(String)
-    primary_pheno      = Column(String, index=True)
-    phenotypes         = relationship("Phenotype",
+    phenotype_desc     = Column(String, index=True)
+    phenotype_cats     = relationship("PhenoCats",
                                       secondary=snp_pheno_assoc,
                                       back_populates="snps")
     InGene             = Column(String)
@@ -134,8 +133,18 @@ class SNP(Base):
 
     def __repr__(self):
         """Display information about the table."""
-        return "{} ({}) <{}:{} pheno: {} total: {} EUR: {} AFR: {}".format(
-            self.id, self.SNPid, self.chrom, self.pos, self.primary_pheno)
+        return "{} ({}) <{}:{} pheno: {} study: {}".format(
+            self.id, self.snpid, self.chrom, self.pos, self.phenotype_desc,
+            self.study.title
+        )
+
+    def __int__(self):
+        """Return ID number."""
+        return self.id
+
+    def __str__(self):
+        """Return coordinates."""
+        return "{}:{}".format(self.chrom, self.pos)
 
 
 class Study(Base):
@@ -155,8 +164,13 @@ class Study(Base):
     qtl              = Column(Boolean)
     snps             = relationship("SNP",
                                     back_populates='study')
-    pheno_desc       = Column(String, index=True)
-    phenotypes       = relationship("Phenotype",
+    phenotype_id     = Column(Integer, ForeignKey('phenos.id'),
+                              index=True)
+    phenotype_desc   = Column(String, ForeignKey('phenos.phenotype'),
+                              index=True)
+    phenotype        = relationship("Phenotype",
+                                    back_populates="studies")
+    phenotype_cats   = relationship("PhenoCats",
                                     secondary=study_pheno_assoc,
                                     back_populates="studies")
     datepub          = Column(Date)
@@ -184,7 +198,7 @@ class Study(Base):
     micronesian      = Column(Integer)
     arab             = Column(Integer)
     mixed            = Column(Integer)
-    unpecified       = Column(Integer)
+    unspecified       = Column(Integer)
     filipino         = Column(Integer)
     indonesian       = Column(Integer)
     total_rep        = Column(Integer)
@@ -198,7 +212,7 @@ class Study(Base):
     rep_micronesian  = Column(Integer)
     rep_arab         = Column(Integer)
     rep_mixed        = Column(Integer)
-    rep_unpecified   = Column(Integer)
+    rep_unspecified  = Column(Integer)
     rep_filipino     = Column(Integer)
     rep_indonesian   = Column(Integer)
     sample_size      = Column(String)  # Maybe parse this better
@@ -260,40 +274,110 @@ class Study(Base):
         'replication_size': 'Replication Sample Size, string description of integer population counts above.',
     }
 
+    @property
+    def population_information(self):
+        """Display a summary of population data."""
+        outstr = ["Primary population: {}\n".format(self.population.population),
+                  "Individuals: {}\n".format(self.total),
+                  "Discovery populations: {}; Total: {}\n".format(
+                      self.disc_pops.to_simple_str, self.total_disc
+                  )]
+        for pop in ['european', 'african', 'east_asian',
+                    'south_asian', 'hispanic', 'native',
+                    'micronesian', 'arab', 'unspecified',
+                    'filipino', 'indonesian']:
+            outstr.append('\t{}: {}\n'.format(pop, eval('self.' + pop)))
+
+        outstr.append("Replication populations: {}; Total: {}\n".format(
+            self.rep_pops.to_simple_str, self.total_rep
+        ))
+        for pop in ['european', 'african', 'east_asian',
+                    'south_asian', 'hispanic', 'native',
+                    'micronesian', 'arab', 'unspecified',
+                    'filipino', 'indonesian']:
+            outstr.append('\t{}: {}\n'.format(pop, eval('self.rep_' + pop)))
+
     def __repr__(self):
-        """Display information about this study."""
-        return "{} <{}:{} {} EUR: {}, AFR: {}>".format(
-            self.id, self.author, self.journal, self.pheno_desc,
-            self.european, self.african)
+        """Display informaertn about this study."""
+        return "{} <{}:{} {} ({}; Disc Pops: {}; Rep Pops: {})>".format(
+            self.id, self.author, self.journal, self.title,
+            self.phenotype_desc, self.disc_pops.to_simple_str,
+            self.rep_pops.to_simple_str)
 
     def __str__(self):
-        """Display reference."""
-        return "{}: {} ({}) (Inds: {})".format(self.journal, self.title,
-                                               self.author, self.total)
+        """Display refertnce."""
+        return "{}: {} ({})\nSNPS: {}\nInds: {}\n".format(
+            self.journal, self.title, self.author, self.snp_count, self.total,
+        ) + "Disc Pops: {}; Rep Pops: {}; EUR: {}; AFR: {}".format(
+            self.disc_pops.to_simple_str, self.rep_pops.to_simple_str,
+            self.european, self.african
+        )
+
+    def __int__(self):
+        """Return ID number."""
+        return self.id
+
+    def __len__(self):
+        """Return total individual count."""
+        return int(self.total)
+
 
 class Phenotype(Base):
 
-    """To store the lists of phenotype categories."""
+    """To store the primary phenotype."""
 
     __tablename__ = "phenos"
+
+    id        = Column(Integer, primary_key=True, autoincrement=True,
+                       index=True)
+    phenotype = Column(String, index=True, unique=True)
+    alias     = Column(String, index=True)
+    studies   = relationship("Study",
+                             back_populates="phenotype")
+
+    def __repr__(self):
+        """Display information."""
+        return "{} <{} (alias: {})>".format(self.id, self.phenotype,
+                                     self.alias)
+
+    def __int__(self):
+        """Return ID number."""
+        return self.id
+
+    def __str__(self):
+        """Display phenotype name."""
+        return "{}".format(self.phenotype)
+
+
+class PhenoCats(Base):
+
+    """To store the lists of phenotype categories."""
+
+    __tablename__ = "pheno_cats"
 
     id       = Column(Integer, primary_key=True, autoincrement=True,
                       index=True)
     category = Column(String, index=True, unique=True)
+    alias    = Column(String, index=True)
     snps     = relationship("SNP",
                             secondary=snp_pheno_assoc,
-                            back_populates="phenotypes")
+                            back_populates="phenotype_cats")
     studies  = relationship("Study",
                             secondary=study_pheno_assoc,
-                            back_populates="phenotypes")
-
-    def __init__(self, category):
-        """Create self."""
-        self.category = category
+                            back_populates="phenotype_cats")
 
     def __repr__(self):
         """Display information."""
-        return "{} <{}>".format(self.id, self.category)
+        return "{} <{} (alias: {})>".format(self.id, self.category,
+                                     self.alias)
+
+    def __int__(self):
+        """Return ID number."""
+        return self.id
+
+    def __str__(self):
+        """Display phenotype name."""
+        return "{}".format(self.category)
 
 
 class Platform(Base):
@@ -317,6 +401,14 @@ class Platform(Base):
         """Display information."""
         return "{} <{}>".format(self.id, self.platform)
 
+    def __int__(self):
+        """Return ID number."""
+        return self.id
+
+    def __str__(self):
+        """Display platform name."""
+        return "{}".format(self.platform)
+
 
 class Population(Base):
 
@@ -335,3 +427,12 @@ class Population(Base):
     def __repr__(self):
         """Display information."""
         return "{} <{}>".format(self.id, self.population)
+
+    def __int__(self):
+        """Return ID number."""
+        return self.id
+
+    def __str__(self):
+        """Display platform name."""
+        return "{}".format(self.population)
+

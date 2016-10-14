@@ -2,7 +2,7 @@
 Functions for managing the GRASP database.
 
        Created: 2016-10-08
- Last modified: 2016-10-12 20:58
+ Last modified: 2016-10-13 16:52
 
 """
 import re
@@ -26,7 +26,8 @@ from flags import Flags
 from tqdm import tqdm
 
 # Table Declarations
-from .tables import Base, Study, SNP, Phenotype, Platform, Population
+from .tables import Base
+from .tables import Study, SNP, Phenotype, PhenoCats, Platform, Population
 from .tables import snp_pheno_assoc, study_pheno_assoc, study_plat_assoc
 
 # Database config
@@ -42,18 +43,18 @@ class PopFlag(Flags):
 
     """A simplified bitwise flag system for tracking populations."""
 
-    eur         = ()  #  European
-    afr         = ()  #  African ancestry
-    east_asian  = ()  #  East Asian
-    south_asian = ()  #  Indian/South Asian
-    his         = ()  #  Hispanic
-    native      = ()  #  Native
-    micro       = ()  #  Micronesian
-    arab        = ()  #  Arab/ME
-    mix         = ()  #  Mixed
-    uns         = ()  #  Unspec
-    filipino    = ()  #  Filipino
-    indonesian  = ()  #  Indonesian
+    eur         = 1     #  European
+    afr         = 2     #  African ancestry
+    east_asian  = 4     #  East Asian
+    south_asian = 8     #  Indian/South Asian
+    his         = 16    #  Hispanic
+    native      = 32    #  Native
+    micro       = 64    #  Micronesian
+    arab        = 128   #  Arab/ME
+    mix         = 256   #  Mixed
+    uns         = 512   #  Unspec
+    filipino    = 1024  #  Filipino
+    indonesian  = 2048  #  Indonesian
 
 
 ###############################################################################
@@ -61,188 +62,187 @@ class PopFlag(Flags):
 ###############################################################################
 
 
-pop_synonyms = {
-    'Allergy':                                         allergy,
-    'Addiction':                                       addiction,
-    'Adipose-related':                                 adipose,
-    'Adverse drug reaction (ADR)':                     adr,
-    'Age-related macular degeneration (ARMD)':         armd,
-    'Aging':                                           aging,
-    'Alcohol':                                         alcohol,
-    "Alzheimer's disease":                             alzheimers,
-    'Amyotrophic lateral sclerosis (ALS)':             als,
-    'Anemia':                                          anemia,
-    'Aneurysm':                                        aneurysm,
-    'Anthrax':                                         anthrax,
-    'Anthropometric':                                  anthropometric,
-    'Arterial':                                        arterial,
-    'Arthritis':                                       arthritis,
-    'Asthma':                                          asthma,
-    'Atrial fibrillation':                             afib,
-    'Attention-deficit/hyperactivity disorder (ADHD)': adhd,
-    'Autism':                                          autism,
-    'Basal cell cancer':                               basal_cell_cancer,
-    'Behavioral':                                      behavioral,
-    'Bipolar disorder':                                bipolar,
-    'Bladder cancer':                                  bladder_cancer,
-    'Bleeding disorder':                               bleeding_disorder,
-    'Blood':                                           blood,
-    'Blood cancer':                                    blood_cancer,
-    'Blood pressure':                                  bp,
-    'Blood-related':                                   blood,
-    'Body mass index':                                 bmi,
-    'Bone cancer':                                     bone_cancer,
-    'Bone-related':                                    bone,
-    'Brain cancer':                                    brain_cancer,
-    'Breast cancer':                                   breast_cancer,
-    'C-reactive protein (CRP)':                        crp,
-    'CVD':                                             cvd,
-    'CVD risk factor (CVD RF)':                        cvd_rf,
-    'Calcium':                                         calcium,
-    'Cancer':                                          cancer,
-    'Cancer-related':                                  cancer_related,
-    'Cardiomyopathy':                                  152,
-    'Cardiovascular disease (CVD)':                    38,
-    'Celiac disease':                                  162,
-    'Cell line':                                       9,
-    'Cervical cancer':                                 158,
-    'Chronic kidney disease':                          113,
-    'Chronic lung disease':                            3,
-    'Chronic obstructive pulmonary disease (COPD)':    140,
-    'Cognition':                                       107,
-    'Colorectal cancer':                               66,
-    'Congenital':                                      96,
-    'Coronary heart disease (CHD)':                    120,
-    "Crohn's disease":                                 63,
-    'Cystic fibrosis':                                 110,
-    'Cytotoxicity':                                    169,
-    'Dental':                                          48,
-    'Depression':                                      104,
-    'Developmental':                                   43,
-    'Diet-related':                                    100,
-    'Drug response':                                   26,
-    'Drug treatment':                                  179,
-    'Emphysema':                                       168,
-    'Endometrial cancer':                              11,
-    'Environment':                                     87,
-    'Epigenetics':                                     22,
-    'Epilepsy':                                        83,
-    'Esophageal cancer':                               70,
-    'Eye-related':                                     17,
-    'Female':                                          14,
-    'Gallbladder cancer':                              67,
-    'Gallstones':                                      125,
-    'Gastric cancer':                                  147,
-    'Gastrointestinal':                                65,
-    'Gender':                                          13,
-    'Gene expression (RNA)':                           19,
-    'Gene expression (protein)':                       6,
-    'General health':                                  167,
-    'Glaucoma':                                        97,
-    'Graft-versus-host':                               164,
-    "Grave's disease":                                 94,
-    'HIV/AIDS':                                        35,
-    'Hair':                                            124,
-    'Hearing':                                         148,
-    'Heart':                                           37,
-    'Heart failure':                                   163,
-    'Heart rate':                                      149,
-    'Height':                                          128,
-    'Hemophilia':                                      154,
-    'Hepatic':                                         89,
-    'Hepatitis':                                       118,
-    'Hormonal':                                        42,
-    "Huntington's disease":                            88,
-    'Imaging':                                         73,
-    'Immune-related':                                  50,
-    'Infection':                                       33,
-    'Inflammation':                                    4,
-    'Influenza':                                       117,
-    'Kidney cancer':                                   150,
-    'Leukemia':                                        53,
-    'Lipids':                                          28,
-    'Liver cancer':                                    136,
-    'Lung cancer':                                     58,
-    'Lymphoma':                                        54,
-    'Male':                                            78,
-    'Manic depression':                                175,
-    'Melanoma':                                        157,
-    'Menarche':                                        134,
-    'Menopause':                                       45,
-    'Methylation':                                     21,
-    'Mood disorder':                                   166,
-    'Mortality':                                       31,
-    'Movement-related':                                130,
-    'Multiple sclerosis (MS)':                         109,
-    'Muscle-related':                                  93,
-    'Musculoskeletal':                                 114,
-    'Myasthenia gravis':                               146,
-    'Myocardial infarction (MI)':                      39,
-    'Narcotics':                                       139,
-    'Nasal':                                           71,
-    'Nasal cancer':                                    151,
-    'Neuro':                                           20,
-    'Obsessive-compulsive disorder (OCD)':             142,
-    'Oral cancer':                                     119,
-    'Oral-related':                                    46,
-    'Ovarian cancer':                                  135,
-    'Pain':                                            143,
-    'Pancreas':                                        57,
-    'Pancreatic cancer':                               56,
-    "Parkinson's disease":                             101,
-    'Physical activity':                               16,
-    'Plasma':                                          76,
-    'Platelet':                                        98,
-    'Pregnancy-related':                               32,
-    'Prostate cancer':                                 79,
-    'Protein expression':                              7,
-    'Pulmonary':                                       2,
-    'Quantitative trait(s)':                           5,
-    'Radiation':                                       144,
-    'Rectal cancer':                                   159,
-    'Renal':                                           91,
-    'Renal cancer':                                    122,
-    'Reproductive':                                    12,
-    'Rheumatoid arthritis':                            62,
-    'Salmonella':                                      141,
-    'Schizophrenia':                                   80,
-    'Serum':                                           30,
-    'Sickle cell anemia':                              126,
-    'Skin cancer':                                     156,
-    'Skin-related':                                    69,
-    'Sleep':                                           68,
-    'Smallpox':                                        121,
-    'Smoking':                                         82,
-    'Social':                                          90,
-    'Stone':                                           92,
-    'Stroke':                                          51,
-    'Subclinical CVD':                                 77,
-    'Surgery':                                         36,
-    'Systemic lupus erythematosus (SLE)':              55,
-    'T2D-related':                                     170,
-    'Testicular cancer':                               161,
-    'Thrombosis':                                      103,
-    'Thyroid':                                         41,
-    'Thyroid cancer':                                  40,
-    'Treatment response':                              15,
-    'Treatment-related':                               171,
-    'Tuberculosis':                                    34,
-    'Type 1 diabetes (T1D)':                           60,
-    'Type 2 diabetes (T2D)':                           18,
-    'Ulcerative colitis':                              138,
-    'Upper airway tract cancer':                       172,
-    'Urinary':                                         85,
-    'Uterine cancer':                                  173,
-    'Uterine fibroids':                                174,
-    'Vaccine':                                         116,
-    'Valve':                                           132,
-    'Vasculitis':                                      137,
-    'Venous':                                          102,
-    'Weight':                                          74,
-    'Wound':                                           64,
-    'miRNA':                                           129
+pheno_synonyms = {
+    'Allergy':                                         'allergy',
+    'Addiction':                                       'addiction',
+    'Adipose-related':                                 'adipose',
+    'Adverse drug reaction (ADR)':                     'adr',
+    'Age-related macular degeneration (ARMD)':         'armd',
+    'Aging':                                           'aging',
+    'Alcohol':                                         'alcohol',
+    "Alzheimer's disease":                             'alzheimers',
+    'Amyotrophic lateral sclerosis (ALS)':             'als',
+    'Anemia':                                          'anemia',
+    'Aneurysm':                                        'aneurysm',
+    'Anthrax':                                         'anthrax',
+    'Anthropometric':                                  'anthropometric',
+    'Arterial':                                        'arterial',
+    'Arthritis':                                       'arthritis',
+    'Asthma':                                          'asthma',
+    'Atrial fibrillation':                             'afib',
+    'Attention-deficit/hyperactivity disorder (ADHD)': 'adhd',
+    'Autism':                                          'autism',
+    'Basal cell cancer':                               'basal_cell_cancer',
+    'Behavioral':                                      'behavioral',
+    'Bipolar disorder':                                'bipolar',
+    'Bladder cancer':                                  'bladder_cancer',
+    'Bleeding disorder':                               'bleeding_disorder',
+    'Blood':                                           'blood',
+    'Blood cancer':                                    'blood_cancer',
+    'Blood pressure':                                  'bp',
+    'Blood-related':                                   'blood',
+    'Body mass index':                                 'bmi',
+    'Bone cancer':                                     'bone_cancer',
+    'Bone-related':                                    'bone',
+    'Brain cancer':                                    'brain_cancer',
+    'Breast cancer':                                   'breast_cancer',
+    'C-reactive protein (CRP)':                        'crp',
+    'CVD':                                             'cvd',
+    'CVD risk factor (CVD RF)':                        'cvd_risk',
+    'Calcium':                                         'calcium',
+    'Cancer':                                          'cancer',
+    'Cancer-related':                                  'cancer_related',
+    'Cardiomyopathy':                                  'cardiomyopathy',
+    'Cardiovascular disease (CVD)':                    'cvd',
+    'Celiac disease':                                  'celiac',
+    'Cell line':                                       'cell_line',
+    'Cervical cancer':                                 'cervical_cancer',
+    'Chronic kidney disease':                          'chronic_kidney_disease',
+    'Chronic lung disease':                            'chronic_lung_disease',
+    'Chronic obstructive pulmonary disease (COPD)':    'copd',
+    'Cognition':                                       'cognition',
+    'Colorectal cancer':                               'colorectal_cancer',
+    'Congenital':                                      'congenital',
+    'Coronary heart disease (CHD)':                    'chd',
+    "Crohn's disease":                                 'crohns',
+    'Cystic fibrosis':                                 'cf',
+    'Cytotoxicity':                                    'cytotoxicity',
+    'Dental':                                          'dental',
+    'Depression':                                      'depression',
+    'Developmental':                                   'developmental',
+    'Diet-related':                                    'diet',
+    'Drug response':                                   'drug_response',
+    'Drug treatment':                                  'drug_treatment',
+    'Emphysema':                                       'emphysema',
+    'Endometrial cancer':                              'endometrial_cancer',
+    'Environment':                                     'environment',
+    'Epigenetics':                                     'epigenetics',
+    'Epilepsy':                                        'epilepsy',
+    'Esophageal cancer':                               'espohageal_cancer',
+    'Eye-related':                                     'eye',
+    'Female':                                          'female',
+    'Gallbladder cancer':                              'gallbladder_cancer',
+    'Gallstones':                                      'gallstones',
+    'Gastric cancer':                                  'gastric_cancer',
+    'Gastrointestinal':                                'gi',
+    'Gender':                                          'gender',
+    'Gene expression (RNA)':                           'rna_expression',
+    'Gene expression (protein)':                       'gene_protein_expression',
+    'General health':                                  'health',
+    'Glaucoma':                                        'glaucoma',
+    'Graft-versus-host':                               'graft_v_host',
+    "Grave's disease":                                 'graves',
+    'HIV/AIDS':                                        'hiv',
+    'Hair':                                            'hair',
+    'Hearing':                                         'hearing',
+    'Heart':                                           'heart',
+    'Heart failure':                                   'heart_failure',
+    'Heart rate':                                      'heart_rate',
+    'Height':                                          'height',
+    'Hemophilia':                                      'hemophilia',
+    'Hepatic':                                         'hepatic',
+    'Hepatitis':                                       'hepatitis',
+    'Hormonal':                                        'hormonal',
+    "Huntington's disease":                            'huntingtons',
+    'Imaging':                                         'imaging',
+    'Immune-related':                                  'immune',
+    'Infection':                                       'infection',
+    'Inflammation':                                    'inflammation',
+    'Influenza':                                       'flu',
+    'Kidney cancer':                                   'kidney_cancer',
+    'Leukemia':                                        'leukemia',
+    'Lipids':                                          'lipids',
+    'Liver cancer':                                    'liver_cancer',
+    'Lung cancer':                                     'lung_cancer',
+    'Lymphoma':                                        'lyphoma',
+    'Male':                                            'male',
+    'Manic depression':                                'manic',
+    'Melanoma':                                        'melanoma',
+    'Menarche':                                        'menarche',
+    'Menopause':                                       'menopause',
+    'Methylation':                                     'methylation',
+    'Mood disorder':                                   'mood_disorder',
+    'Mortality':                                       'mortality',
+    'Movement-related':                                'movement',
+    'Multiple sclerosis (MS)':                         'ms',
+    'Muscle-related':                                  'muscle',
+    'Musculoskeletal':                                 'msk',
+    'Myasthenia gravis':                               'myasthenia',
+    'Myocardial infarction (MI)':                      'mi',
+    'Narcotics':                                       'narc',
+    'Nasal':                                           'nasal',
+    'Nasal cancer':                                    'nasal_cancer',
+    'Neuro':                                           'neuro',
+    'Obsessive-compulsive disorder (OCD)':             'ocd',
+    'Oral cancer':                                     'oral_cancer',
+    'Oral-related':                                    'oral',
+    'Ovarian cancer':                                  'ovarian_cancer',
+    'Pain':                                            'pain',
+    'Pancreas':                                        'pancreas',
+    'Pancreatic cancer':                               'pancreatic_cancer',
+    "Parkinson's disease":                             'parkinsons',
+    'Physical activity':                               'activity',
+    'Plasma':                                          'plasma',
+    'Platelet':                                        'platlet',
+    'Pregnancy-related':                               'pregnancy',
+    'Prostate cancer':                                 'prostate_cancer',
+    'Protein expression':                              'protein_expression',
+    'Pulmonary':                                       'pulmonary',
+    'Quantitative trait(s)':                           'quantitative',
+    'Radiation':                                       'radiation',
+    'Rectal cancer':                                   'rectal_cancer',
+    'Renal':                                           'renal',
+    'Renal cancer':                                    'renal_cancer',
+    'Reproductive':                                    'reproductive',
+    'Rheumatoid arthritis':                            'rheumatoid',
+    'Salmonella':                                      'salmonella',
+    'Schizophrenia':                                   'schizophrenia',
+    'Serum':                                           'serum',
+    'Sickle cell anemia':                              'sickle_cell',
+    'Skin cancer':                                     'skin_cancer',
+    'Skin-related':                                    'skin',
+    'Sleep':                                           'sleep',
+    'Smallpox':                                        'smallpox',
+    'Smoking':                                         'smoking',
+    'Social':                                          'social',
+    'Stone':                                           'stone',
+    'Stroke':                                          'stroke',
+    'Subclinical CVD':                                 'subclin_cvd',
+    'Surgery':                                         'surgery',
+    'Systemic lupus erythematosus (SLE)':              'sle',
+    'T2D-related':                                     't2d_related',
+    'Testicular cancer':                               'testicular',
+    'Thrombosis':                                      'thrombosis',
+    'Thyroid':                                         'thyroid',
+    'Thyroid cancer':                                  'thyroid_cancer',
+    'Treatment response':                              'treatment_response',
+    'Treatment-related':                               'treatment',
+    'Tuberculosis':                                    'tb',
+    'Type 1 diabetes (T1D)':                           't2d',
+    'Type 2 diabetes (T2D)':                           't1d',
+    'Ulcerative colitis':                              'ulc_colitis',
+    'Upper airway tract cancer':                       'upper_airway_cancer',
+    'Urinary':                                         'urinary',
+    'Uterine cancer':                                  'uterine_cancer',
+    'Uterine fibroids':                                'uterine_fibroids',
+    'Vaccine':                                         'vaccine',
+    'Valve':                                           'valve',
+    'Vasculitis':                                      'vasculitis',
+    'Venous':                                          'venous',
+    'Weight':                                          'weight',
+    'Wound':                                           'wound',
+    'miRNA':                                           'mirna',
 }
-
 
 
 ###############################################################################
@@ -280,6 +280,7 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
     """
     rows        = 0
     count       = commit_every
+    pphenos     = {}
     phenos      = {}
     platforms   = {}
     populations = {}
@@ -301,6 +302,7 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
     study_table = Study.__table__
     snp_table   = SNP.__table__
     pheno_table = Phenotype.__table__
+    pcat_table  = PhenoCats.__table__
     plat_table  = Platform.__table__
     pop_table   = Population.__table__
 
@@ -308,6 +310,7 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
     study_ins   = study_table.insert()
     snp_ins     = snp_table.insert()
     pheno_ins   = pheno_table.insert()
+    pcat_ins    = pcat_table.insert()
     plat_ins    = plat_table.insert()
     pop_ins     = pop_table.insert()
     phsnp_ins   = snp_pheno_assoc.insert()
@@ -327,8 +330,21 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
         # Drop header
         fin.readline()
 
+        pbar = tqdm(total=2083, unit='studies')
         for line in fin:
             f = line.rstrip().split('\t')
+
+            # Get primary phenotype
+            ppheno = f[7].strip()
+            if ppheno not in pphenos:
+                conn.execute(pheno_ins.values(
+                    phenotype=ppheno
+                ))
+                pphenos[ppheno] = conn.execute(
+                    select([pheno_table.c.id]).where(
+                        pheno_table.c.phenotype == ppheno
+                    )
+                ).first()[0]
 
             # Get phenotype categories
             pheno_cats = f[8].strip().split(';')
@@ -338,10 +354,12 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
                 if not pcat:
                     continue
                 if pcat not in phenos:
-                    conn.execute(pheno_ins.values(category=pcat))
+                    conn.execute(pcat_ins.values(
+                        category=pcat, alias=pheno_synonyms[pcat]
+                    ))
                     phenos[pcat] = conn.execute(
-                        select([pheno_table.c.id]).where(
-                            pheno_table.c.category == pcat
+                        select([pcat_table.c.id]).where(
+                            pcat_table.c.category == pcat
                         )
                     ).first()[0]
                 our_phenos.append(phenos[pcat])
@@ -388,58 +406,58 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
                 population = None
 
             # Set populaion flags
-            p = PopFlag
-            disc_pop = p(0)
-            rep_pop  = p(0)
+            pflag = PopFlag
+            disc_pop = pflag(0)
+            rep_pop  = pflag(0)
             l = len(f)
             if l > 22 and f[22]:
-                disc_pop |= p.eur
+                disc_pop |= pflag.eur
             if l > 23 and f[23]:
-                disc_pop |= p.afr
+                disc_pop |= pflag.afr
             if l > 24 and f[24]:
-                disc_pop |= p.east_asian
+                disc_pop |= pflag.east_asian
             if l > 25 and f[25]:
-                disc_pop |= p.south_asian
+                disc_pop |= pflag.south_asian
             if l > 26 and f[26]:
-                disc_pop |= p.his
+                disc_pop |= pflag.his
             if l > 27 and f[27]:
-                disc_pop |= p.native
+                disc_pop |= pflag.native
             if l > 28 and f[28]:
-                disc_pop |= p.micro
+                disc_pop |= pflag.micro
             if l > 29 and f[29]:
-                disc_pop |= p.arab
+                disc_pop |= pflag.arab
             if l > 30 and f[30]:
-                disc_pop |= p.mix
+                disc_pop |= pflag.mix
             if l > 31 and f[31]:
-                disc_pop |= p.uns
+                disc_pop |= pflag.uns
             if l > 32 and f[32]:
-                disc_pop |= p.filipino
+                disc_pop |= pflag.filipino
             if l > 33 and f[33]:
-                disc_pop |= p.indonesian
+                disc_pop |= pflag.indonesian
             if l > 35 and f[35]:
-                rep_pop |= p.eur
+                rep_pop |= pflag.eur
             if l > 36 and f[36]:
-                rep_pop |= p.afr
+                rep_pop |= pflag.afr
             if l > 37 and f[37]:
-                rep_pop |= p.east_asian
+                rep_pop |= pflag.east_asian
             if l > 38 and f[38]:
-                rep_pop |= p.south_asian
+                rep_pop |= pflag.south_asian
             if l > 39 and f[39]:
-                rep_pop |= p.his
+                rep_pop |= pflag.his
             if l > 40 and f[40]:
-                rep_pop |= p.native
+                rep_pop |= pflag.native
             if l > 41 and f[41]:
-                rep_pop |= p.micro
+                rep_pop |= pflag.micro
             if l > 42 and f[42]:
-                rep_pop |= p.arab
+                rep_pop |= pflag.arab
             if l > 43 and f[43]:
-                rep_pop |= p.mix
+                rep_pop |= pflag.mix
             if l > 44 and f[44]:
-                rep_pop |= p.uns
+                rep_pop |= pflag.uns
             if l > 45 and f[45]:
-                rep_pop |= p.filipino
+                rep_pop |= pflag.filipino
             if l > 46 and f[46]:
-                rep_pop |= p.indonesian
+                rep_pop |= pflag.indonesian
 
             # Create study
             study_records.append({
@@ -450,8 +468,10 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
                 'noresults':        True if f[4] else False,
                 'results':          int(f[5]),
                 'qtl':              True if f[6] == '1' else False,
-                'pheno_desc':       f[7].strip(),
-                'phenotypes':       our_phenos,
+                'phenotype_id':     pphenos[ppheno],
+                'phenotype_desc':   ppheno,
+                'phenotype':        pphenos[ppheno],
+                'phenotype_cats':   our_phenos,
                 'datepub':          _get_date(f[9]),
                 'in_nhgri':         _get_bool(f[10]),
                 'journal':          f[11].strip(),
@@ -478,7 +498,7 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
                 'micronesian':      int(f[28]) if l > 28 and f[28] else None,
                 'arab':             int(f[29]) if l > 29 and f[29] else None,
                 'mixed':            int(f[30]) if l > 30 and f[30] else None,
-                'unpecified':       int(f[31]) if l > 31 and f[31] else None,
+                'unspecified':      int(f[31]) if l > 31 and f[31] else None,
                 'filipino':         int(f[32]) if l > 32 and f[32] else None,
                 'indonesian':       int(f[33]) if l > 33 and f[33] else None,
                 'total_rep':        int(f[34]) if l > 34 and f[34] else None,
@@ -492,7 +512,7 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
                 'rep_micronesian':  int(f[41]) if l > 41 and f[41] else None,
                 'rep_arab':         int(f[42]) if l > 42 and f[42] else None,
                 'rep_mixed':        int(f[43]) if l > 43 and f[43] else None,
-                'rep_unpecified':   int(f[44]) if l > 44 and f[44] else None,
+                'rep_unspecified':  int(f[44]) if l > 44 and f[44] else None,
                 'rep_filipino':     int(f[45]) if l > 45 and f[45] else None,
                 'rep_indonesian':   int(f[46]) if l > 46 and f[46] else None,
             })
@@ -503,6 +523,9 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
             for i in our_platforms:
                 plstudy_records.append({'study_id' : int(f[0]), 'platform_id' : i})
 
+            pbar.update()
+
+    pbar.close()
     sys.stdout.write('Writing study information...\n')
     conn.execute(study_ins, study_records)
     conn.execute(phstudy_ins, phstudy_records)
@@ -536,15 +559,34 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
         for line in fin:
             f = line.rstrip().split('\t')
 
+            # Get primary phenotype
+            ppheno = f[11].strip()
+            # These are poorly curated, so there is no need to use a
+            # separate table for them.
+            #  if ppheno not in pphenos:
+                #  conn.execute(pheno_ins.values(
+                    #  phenotype=ppheno
+                #  ))
+                #  pphenos[ppheno] = conn.execute(
+                    #  select([pheno_table.c.id]).where(
+                        #  pheno_table.c.phenotype == ppheno
+                    #  )
+                #  ).first()[0]
+
             # Get phenotype categories
             pheno_cats = f[13].strip().split(';')
             our_phenos = []
             for pcat in pheno_cats:
+                pcat.strip()
+                if not pcat:
+                    continue
                 if pcat not in phenos:
-                    conn.execute(pheno_ins.values(category=pcat))
+                    conn.execute(pcat_ins.values(
+                        category=pcat, alias=pheno_synonyms[pcat]
+                    ))
                     phenos[pcat] = conn.execute(
-                        select([pheno_table.c.id]).where(
-                            pheno_table.c.category == pcat
+                        select([pcat_table.c.id]).where(
+                            pcat_table.c.category == pcat
                         )
                     ).first()[0]
                 our_phenos.append(phenos[pcat])
@@ -592,8 +634,8 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
                 'study_snpid':      f[8],
                 'paper_loc':        f[9],
                 'pval':             float(f[10]) if f[10] else None,
-                'primary_pheno':    f[11] if l > 12 else None,
-                'phenotypes':       our_phenos,
+                'phenotype_desc':   ppheno,
+                'phenotype_cats':   our_phenos,
             }
             record['InGene']             = f[51] if l > 52 else None
             record['NearestGene']        = f[52] if l > 53 else None
@@ -634,7 +676,7 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
                     tqdm.write('{} rows written'.format(rows))
                 else:
                     sys.stdout.write('{} rows written\n'.format(rows))
-                count           = 49999
+                count           = commit_every-1
                 snp_records     = []
                 phsnp_records = []
             rows += 1
@@ -642,6 +684,7 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
                 pbar.update()
 
         # Final insert
+        tqdm.close()
         sys.stdout.write('Writing final rows...\n')
         conn.execute(snp_ins, snp_records)
         conn.execute(phsnp_ins, phsnp_records)

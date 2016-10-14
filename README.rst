@@ -100,9 +100,19 @@ useful, this is just an example of syntax. All of the functions in grasp.query
 provide ways to get dataframes back from grasp with ease. `get_snps()`
 (described below) is the best example of this.
 
-We provide 4 tables:
+This module provides 5 tables:
 
-Study, Phenotype, Platform, and SNP (as well as several association tables)
+Study, Phenotype, PhenoCats, Platform, and SNP (as well as several association tables)
+
+It is important to note that there are **three** ways of getting
+phenotype information:
+- The Phenotype table, which lists the primary phenotype for every study
+- The PhenoCats table, which lists the GRASP curated phenotype categories,
+  each Study has several of these.
+- The phenotype_desc column in the SNP table, this is a poorly curated
+  column directly from the full dataset, it roughly corresponds to the
+  information in the Phenotype table, but the correspondance is not exact
+  due to an abundance of typos and slightly differently typed information.
 
 Tables are defined in grasp.tables
 Database setup functions are in grasp.db
