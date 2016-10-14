@@ -2,7 +2,7 @@
 Table descriptions in SQLAlchemy ORM.
 
        Created: 2016-10-08
- Last modified: 2016-10-13 16:47
+ Last modified: 2016-10-13 18:00
 
 """
 from sqlalchemy import Table, Column, Index, ForeignKey
@@ -328,7 +328,7 @@ class Phenotype(Base):
 
     __tablename__ = "phenos"
 
-    id        = Column(Integer, primary_key=True, autoincrement=True,
+    id        = Column(Integer, primary_key=True,
                        index=True)
     phenotype = Column(String, index=True, unique=True)
     alias     = Column(String, index=True)
@@ -355,7 +355,7 @@ class PhenoCats(Base):
 
     __tablename__ = "pheno_cats"
 
-    id       = Column(Integer, primary_key=True, autoincrement=True,
+    id       = Column(Integer, primary_key=True,
                       index=True)
     category = Column(String, index=True, unique=True)
     alias    = Column(String, index=True)
@@ -386,7 +386,7 @@ class Platform(Base):
 
     __tablename__ = "platforms"
 
-    id       = Column(Integer, primary_key=True, autoincrement=True,
+    id       = Column(Integer, primary_key=True,
                       index=True)
     platform = Column(String, index=True, unique=True)
     studies  = relationship("Study",
@@ -416,7 +416,7 @@ class Population(Base):
 
     __tablename__ = "populations"
 
-    id         = Column(Integer, primary_key=True, autoincrement=True,
+    id         = Column(Integer, primary_key=True,
                         index=True)
     population = Column(String, index=True, unique=True)
 

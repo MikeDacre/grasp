@@ -2,7 +2,7 @@
 Functions for managing the GRASP database.
 
        Created: 2016-10-08
- Last modified: 2016-10-13 16:52
+ Last modified: 2016-10-13 18:01
 
 """
 import re
@@ -58,9 +58,8 @@ class PopFlag(Flags):
 
 
 ###############################################################################
-#                             Population Synonyms                             #
+#                              Correction Tables                              #
 ###############################################################################
-
 
 pheno_synonyms = {
     'Allergy':                                         'allergy',
@@ -244,6 +243,7 @@ pheno_synonyms = {
     'miRNA':                                           'mirna',
 }
 
+pop_correction = {'European/Unspecified': 'European'}
 
 ###############################################################################
 #                               Core Functions                                #
@@ -285,8 +285,6 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
     platforms   = {}
     populations = {}
 
-    # Correction tables
-    pop_correction = {'European/Unspecified': 'European'}
 
     # Create tables
     _, engine = get_session()
@@ -317,12 +315,26 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
     phstudy_ins = study_pheno_assoc.insert()
     plstudy_ins = study_plat_assoc.insert()
 
-    spare_id        = 1
+    # Unique ID counters
+    spare_id = 1
+    pheno_id = 1
+    pcat_id  = 1
+    plat_id  = 1
+    pop_id   = 1
+
+    # Lists to hold records
+    pheno_records   = []
+    pcat_records    = []
+    plat_records    = []
+    pop_records     = []
     study_records   = []
     snp_records     = []
     phsnp_records   = []
     phstudy_records = []
     plstudy_records = []
+
+    # Platform parsing regex
+    plat_parser = re.compile(r'^([^[]*)\[([^]]+)\]?(.*)')
 
     # Build study information from study file
     sys.stdout.write('Parsing study information.\n')
@@ -337,14 +349,10 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
             # Get primary phenotype
             ppheno = f[7].strip()
             if ppheno not in pphenos:
-                conn.execute(pheno_ins.values(
-                    phenotype=ppheno
-                ))
-                pphenos[ppheno] = conn.execute(
-                    select([pheno_table.c.id]).where(
-                        pheno_table.c.phenotype == ppheno
-                    )
-                ).first()[0]
+                pheno_records.append({'phenotype': ppheno,
+                                      'id': pheno_id})
+                pphenos[ppheno] = pheno_id
+                pheno_id += 1
 
             # Get phenotype categories
             pheno_cats = f[8].strip().split(';')
@@ -354,34 +362,30 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
                 if not pcat:
                     continue
                 if pcat not in phenos:
-                    conn.execute(pcat_ins.values(
-                        category=pcat, alias=pheno_synonyms[pcat]
-                    ))
-                    phenos[pcat] = conn.execute(
-                        select([pcat_table.c.id]).where(
-                            pcat_table.c.category == pcat
-                        )
-                    ).first()[0]
+                    pcat_records.append({
+                        'id': pcat_id,
+                        'category': pcat,
+                        'alias': pheno_synonyms[pcat],
+                    })
+                    phenos[pcat] = pcat_id
+                    pcat_id += 1
                 our_phenos.append(phenos[pcat])
 
             # Get platform info
             our_platforms = []
             try:
                 plat, snp_count, impt = [
-                    i.strip() for i in re.findall(r'^([^[]*)\[([^]]+)\]?(.*)',
-                                                  f[18].strip())[0]
+                    i.strip() for i in plat_parser.findall(f[18].strip())[0]
                 ]
                 imputed = True if impt == '(imputed)' else False
                 plats = _split_mesy_list(plat)
                 for plat in plats:
                     plat = plat.strip()
                     if plat not in platforms:
-                        conn.execute(plat_ins.values(platform=plat))
-                        platforms[plat] = conn.execute(
-                            select([plat_table.c.id]).where(
-                                plat_table.c.platform == plat
-                            )
-                        ).first()[0]
+                        plat_records.append({'id': plat_id,
+                                             'platform': plat})
+                        platforms[plat] = plat_id
+                        plat_id += 1
                     our_platforms.append(platforms[plat])
             except IndexError:
                 plat, snp_count, impt = None, None, None
@@ -395,12 +399,10 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
                 except KeyError:
                     pass
                 if pop not in populations:
-                    conn.execute(pop_ins.values(population=pop))
-                    populations[pop] = conn.execute(
-                        select([pop_table.c.id]).where(
-                            pop_table.c.population == pop
-                        )
-                    ).first()[0]
+                    pop_records.append({'id': pop_id,
+                                        'population': pop})
+                    populations[pop] = pop_id
+                    pop_id += 1
                 population = populations[pop]
             except IndexError:
                 population = None
@@ -527,10 +529,21 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
 
     pbar.close()
     sys.stdout.write('Writing study information...\n')
+    conn.execute(pheno_ins, pheno_records)
+    conn.execute(pcat_ins, pcat_records)
+    conn.execute(plat_ins, plat_records)
+    conn.execute(pop_ins, pop_records)
     conn.execute(study_ins, study_records)
     conn.execute(phstudy_ins, phstudy_records)
     conn.execute(plstudy_ins, plstudy_records)
 
+    # Reinitialize lists for main GRASP parser
+    pheno_records   = []
+    pcat_records    = []
+    plat_records    = []
+    pop_records     = []
+
+    # Get full study info from database for use in SNPs
     sinfo = conn.execute(select([study_table.c.id, study_table.c.pmid])).fetchall()
     studies = {}
     for i, p in sinfo:
@@ -581,28 +594,27 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
                 if not pcat:
                     continue
                 if pcat not in phenos:
-                    conn.execute(pcat_ins.values(
-                        category=pcat, alias=pheno_synonyms[pcat]
-                    ))
-                    phenos[pcat] = conn.execute(
-                        select([pcat_table.c.id]).where(
-                            pcat_table.c.category == pcat
-                        )
-                    ).first()[0]
+                    pcat_records.append({
+                        'id': pcat_id,
+                        'category': pcat,
+                        'alias': pheno_synonyms[pcat],
+                    })
+                    phenos[pcat] = pcat_id
+                    pcat_id += 1
                 our_phenos.append(phenos[pcat])
 
             # Get population description
             try:
                 pop = f[23].strip()
-                if pop in pop_correction:
+                try:
                     pop = pop_correction[pop]
+                except KeyError:
+                    pass
                 if pop not in populations:
-                    conn.execute(pop_ins.values(population=pop))
-                    populations[pop] = conn.execute(
-                        select([pop_table.c.id]).where(
-                            pop_table.c.population == pop
-                        )
-                    ).first()[0]
+                    pop_records.append({'id': pop_id,
+                                        'population': pop})
+                    populations[pop] = pop_id
+                    pop_id += 1
                 population = populations[pop]
             except IndexError:
                 population = None
@@ -670,21 +682,30 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
                     tqdm.write('Writing rows...')
                 else:
                     sys.stdout.write('Writing rows...\n')
+                if pcat_records:
+                    conn.execute(pcat_ins, pcat_records)
+                if plat_records:
+                    conn.execute(plat_ins, plat_records)
+                if pop_records:
+                    conn.execute(pop_ins, pop_records)
                 conn.execute(snp_ins, snp_records)
                 conn.execute(phsnp_ins, phsnp_records)
                 if progress:
                     tqdm.write('{} rows written'.format(rows))
                 else:
                     sys.stdout.write('{} rows written\n'.format(rows))
-                count           = commit_every-1
-                snp_records     = []
+                count         = commit_every-1
+                pcat_records  = []
+                plat_records  = []
+                pop_records   = []
+                snp_records   = []
                 phsnp_records = []
             rows += 1
             if progress:
                 pbar.update()
 
         # Final insert
-        tqdm.close()
+        pbar.close()
         sys.stdout.write('Writing final rows...\n')
         conn.execute(snp_ins, snp_records)
         conn.execute(phsnp_ins, phsnp_records)

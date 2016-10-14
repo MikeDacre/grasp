@@ -70,8 +70,10 @@ Both files can be gzipped or bzipped.
 The grasp file is the raw unzipped file from the project page:
 `GRASP2fullDataset <https://s3.amazonaws.com/NHLBI_Public/GRASP/GraspFullDataset2.zip>`_
 
-The database takes about 40 minutes to build on a desktop machine and uses
-about 2GB of space.
+The database takes about 90 minutes to build on a desktop machine and uses
+about 3GB of space. The majority of the build time is spent parsing dates,
+but because the dates are encoded in the SNP table, and the formatting varies,
+this step is required.
 
 =====
 Usage
