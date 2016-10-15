@@ -2,7 +2,7 @@
 A mix of functions to make querying the database faster.
 
        Created: 2016-49-11 07:10
- Last modified: 2016-10-14 13:20
+ Last modified: 2016-10-14 19:15
 
 """
 import pandas as _pd
@@ -18,16 +18,65 @@ __all__ = ["get_studies", "get_snps", "get_phenotypes", "get_populations"]
 ###############################################################################
 
 
-def get_studies(pheno=None, pop=None):
+def get_studies(primary_phenotype=None, pheno_cats=None):
     """Return a list of studies filtered by phenotype and population.
 
-    :pheno:   The phenotype of interest, string or list of strings.
-    :pop:     The population of interest, string or list of strings.
-    :returns: A list of studies.
+    There are two ways to query both phenotype and population.
+
+    Phenotype
+    ---------
+
+    GRASP provides a 'primary phenotype' for each study, which are fairly
+    poorly curated. They also provide a list of phenotype categories, which
+    are well curated. The problem with the categories is that there are
+    multiple per study and some are to general to be useful. If using
+    categories be sure to post filter the study list.
+
+    Population
+    ----------
+
+    Each study has a primary population (list available with 'get_populations')
+    but some studies also have other populations in the cohort. GRASP indexes
+    all population counts, so those can be used to query also. To query these
+    use has_ or excl_ (exclusive) parameters, you can query either discovery
+    populations or replication populations. Note that you cannot provide both
+    has_ and excl_ parameters for the same population type.
+
+    For doing population specific analyses most of the time you will want the
+    excl_disc_pop query.
+
+    Params
+    ------
+
+    Pheno
+    .....
+
+    :primary_phenotype: Phenotype of interest, string or list of strings.
+    :pheno_cats:        Phenotype category of interest.
+
+    Pop
+    ...
+
+    :primary_pop:  Query the primary population, string or list of strings.
+
+    The following parameters can take a string or a ref.PopFlag parameter.
+
+    :has_disc_pop:  Return all studies with these discovery populations
+    :has_rep_pop:   Return all studies with these replication populations
+    :only_disc_pop: Return all studies with ONLY these discovery populations
+    :only_rep_pop:  Return all studies with ONLY these replication populations
+
+    General
+    .......
+
+    :query:   Return the query instead of the list of study objects.
+    :pandas:  Return a dataframe of study information instead of the list.
+    :returns: A list of study objects, a query, or a dataframe.
 
     """
     s, _ = _db.get_session()
 
+    if (has_disc_pop and excl_disc_pop) or (has_rep_pop and excl_rep_pop)
     if pheno and isinstance(pheno, str):
         pheno = [pheno]
     if pop and isinstance(pop, str):
@@ -72,6 +121,30 @@ def get_snps(studies, pandas=True):
         return s.query(t.SNP).filter(
             t.SNP.study_id.in_(studies)
         ).all()
+
+
+###############################################################################
+#                      Use MyVariant to get Variant Info                      #
+###############################################################################
+
+
+def get_variant_info(snp_list, fields="dbsnp", pandas=True):
+    """Use the myvariant API to get info about this SNP.
+
+    Note that this service can be very slow.
+
+    :snp_list: A list of SNP objects or 'chr:loc'
+    :fields:   Choose fields to display from:
+                  docs.myvariant.info/en/latest/doc/data.html#available-fields
+                  Good choices are 'dbsnp', 'clinvar', or 'gwassnps'
+                  Can also use 'grasp' to get a different version of this info.
+    :pandas:   Return a dataframe instead of dictionary.
+    """
+    mv = myvariant.MyVariantInfo()
+    if isinstance(snp_list[0], t.SNP):
+        snp_list = [i.snp_loc for i in snp_list]
+    return mv.querymany(snp_list, fields=fields, as_dataframe=pandas,
+                        df_index=True)
 
 ###############################################################################
 #                          Get Category Information                           #

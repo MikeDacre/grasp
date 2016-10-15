@@ -2,13 +2,13 @@
 Functions for managing the GRASP database.
 
        Created: 2016-10-08
- Last modified: 2016-10-14 13:22
+ Last modified: 2016-10-14 17:31
 
 """
 import os as _os
-import bz2
-import gzip
-from re import compile as _recompile
+from re   import compile  as _recompile
+from bz2  import open     as _bopen
+from gzip import open     as _zopen
 from html import unescape as _unescape
 
 # Date parsing
@@ -16,12 +16,9 @@ from datetime import date as _date
 from dateutil.parser import parse as _dateparse
 
 # Database
-from sqlalchemy import create_engine as _create_engine
-from sqlalchemy.sql import select as _select
-from sqlalchemy.orm import sessionmaker as _sessionmaker
-
-# Bitwise flags
-from flags import Flags as _Flags
+from sqlalchemy     import create_engine as _create_engine
+from sqlalchemy.sql import select        as _select
+from sqlalchemy.orm import sessionmaker  as _sessionmaker
 
 # Progress bar
 from tqdm import tqdm as _tqdm
@@ -41,219 +38,12 @@ from .tables import study_plat_assoc as _study_plat_assoc
 # Database config
 from .config import config as _config
 
-__all__ = ["PopFlag", "get_session", "initialize_database"
+# Reference objects
+from .ref import PopFlag as _PopFlag
+from .ref import pheno_synonyms
+from .ref import pop_correction
 
-
-###############################################################################
-#                          Population Bitwise Flags                           #
-###############################################################################
-
-
-class PopFlag(_Flags):
-
-    """A simplified bitwise flag system for tracking populations."""
-
-    eur         = 1     #  European
-    afr         = 2     #  African ancestry
-    east_asian  = 4     #  East Asian
-    south_asian = 8     #  Indian/South Asian
-    his         = 16    #  Hispanic
-    native      = 32    #  Native
-    micro       = 64    #  Micronesian
-    arab        = 128   #  Arab/ME
-    mix         = 256   #  Mixed
-    uns         = 512   #  Unspec
-    filipino    = 1024  #  Filipino
-    indonesian  = 2048  #  Indonesian
-
-
-###############################################################################
-#                              Correction Tables                              #
-###############################################################################
-
-pheno_synonyms = {
-    'Allergy':                                         'allergy',
-    'Addiction':                                       'addiction',
-    'Adipose-related':                                 'adipose',
-    'Adverse drug reaction (ADR)':                     'adr',
-    'Age-related macular degeneration (ARMD)':         'armd',
-    'Aging':                                           'aging',
-    'Alcohol':                                         'alcohol',
-    "Alzheimer's disease":                             'alzheimers',
-    'Amyotrophic lateral sclerosis (ALS)':             'als',
-    'Anemia':                                          'anemia',
-    'Aneurysm':                                        'aneurysm',
-    'Anthrax':                                         'anthrax',
-    'Anthropometric':                                  'anthropometric',
-    'Arterial':                                        'arterial',
-    'Arthritis':                                       'arthritis',
-    'Asthma':                                          'asthma',
-    'Atrial fibrillation':                             'afib',
-    'Attention-deficit/hyperactivity disorder (ADHD)': 'adhd',
-    'Autism':                                          'autism',
-    'Basal cell cancer':                               'basal_cell_cancer',
-    'Behavioral':                                      'behavioral',
-    'Bipolar disorder':                                'bipolar',
-    'Bladder cancer':                                  'bladder_cancer',
-    'Bleeding disorder':                               'bleeding_disorder',
-    'Blood':                                           'blood',
-    'Blood cancer':                                    'blood_cancer',
-    'Blood pressure':                                  'bp',
-    'Blood-related':                                   'blood',
-    'Body mass index':                                 'bmi',
-    'Bone cancer':                                     'bone_cancer',
-    'Bone-related':                                    'bone',
-    'Brain cancer':                                    'brain_cancer',
-    'Breast cancer':                                   'breast_cancer',
-    'C-reactive protein (CRP)':                        'crp',
-    'CVD':                                             'cvd',
-    'CVD risk factor (CVD RF)':                        'cvd_risk',
-    'Calcium':                                         'calcium',
-    'Cancer':                                          'cancer',
-    'Cancer-related':                                  'cancer_related',
-    'Cardiomyopathy':                                  'cardiomyopathy',
-    'Cardiovascular disease (CVD)':                    'cvd',
-    'Celiac disease':                                  'celiac',
-    'Cell line':                                       'cell_line',
-    'Cervical cancer':                                 'cervical_cancer',
-    'Chronic kidney disease':                          'chronic_kidney_disease',
-    'Chronic lung disease':                            'chronic_lung_disease',
-    'Chronic obstructive pulmonary disease (COPD)':    'copd',
-    'Cognition':                                       'cognition',
-    'Colorectal cancer':                               'colorectal_cancer',
-    'Congenital':                                      'congenital',
-    'Coronary heart disease (CHD)':                    'chd',
-    "Crohn's disease":                                 'crohns',
-    'Cystic fibrosis':                                 'cf',
-    'Cytotoxicity':                                    'cytotoxicity',
-    'Dental':                                          'dental',
-    'Depression':                                      'depression',
-    'Developmental':                                   'developmental',
-    'Diet-related':                                    'diet',
-    'Drug response':                                   'drug_response',
-    'Drug treatment':                                  'drug_treatment',
-    'Emphysema':                                       'emphysema',
-    'Endometrial cancer':                              'endometrial_cancer',
-    'Environment':                                     'environment',
-    'Epigenetics':                                     'epigenetics',
-    'Epilepsy':                                        'epilepsy',
-    'Esophageal cancer':                               'espohageal_cancer',
-    'Eye-related':                                     'eye',
-    'Female':                                          'female',
-    'Gallbladder cancer':                              'gallbladder_cancer',
-    'Gallstones':                                      'gallstones',
-    'Gastric cancer':                                  'gastric_cancer',
-    'Gastrointestinal':                                'gi',
-    'Gender':                                          'gender',
-    'Gene expression (RNA)':                           'rna_expression',
-    'Gene expression (protein)':                       'gene_protein_expression',
-    'General health':                                  'health',
-    'Glaucoma':                                        'glaucoma',
-    'Graft-versus-host':                               'graft_v_host',
-    "Grave's disease":                                 'graves',
-    'HIV/AIDS':                                        'hiv',
-    'Hair':                                            'hair',
-    'Hearing':                                         'hearing',
-    'Heart':                                           'heart',
-    'Heart failure':                                   'heart_failure',
-    'Heart rate':                                      'heart_rate',
-    'Height':                                          'height',
-    'Hemophilia':                                      'hemophilia',
-    'Hepatic':                                         'hepatic',
-    'Hepatitis':                                       'hepatitis',
-    'Hormonal':                                        'hormonal',
-    "Huntington's disease":                            'huntingtons',
-    'Imaging':                                         'imaging',
-    'Immune-related':                                  'immune',
-    'Infection':                                       'infection',
-    'Inflammation':                                    'inflammation',
-    'Influenza':                                       'flu',
-    'Kidney cancer':                                   'kidney_cancer',
-    'Leukemia':                                        'leukemia',
-    'Lipids':                                          'lipids',
-    'Liver cancer':                                    'liver_cancer',
-    'Lung cancer':                                     'lung_cancer',
-    'Lymphoma':                                        'lyphoma',
-    'Male':                                            'male',
-    'Manic depression':                                'manic',
-    'Melanoma':                                        'melanoma',
-    'Menarche':                                        'menarche',
-    'Menopause':                                       'menopause',
-    'Methylation':                                     'methylation',
-    'Mood disorder':                                   'mood_disorder',
-    'Mortality':                                       'mortality',
-    'Movement-related':                                'movement',
-    'Multiple sclerosis (MS)':                         'ms',
-    'Muscle-related':                                  'muscle',
-    'Musculoskeletal':                                 'msk',
-    'Myasthenia gravis':                               'myasthenia',
-    'Myocardial infarction (MI)':                      'mi',
-    'Narcotics':                                       'narc',
-    'Nasal':                                           'nasal',
-    'Nasal cancer':                                    'nasal_cancer',
-    'Neuro':                                           'neuro',
-    'Obsessive-compulsive disorder (OCD)':             'ocd',
-    'Oral cancer':                                     'oral_cancer',
-    'Oral-related':                                    'oral',
-    'Ovarian cancer':                                  'ovarian_cancer',
-    'Pain':                                            'pain',
-    'Pancreas':                                        'pancreas',
-    'Pancreatic cancer':                               'pancreatic_cancer',
-    "Parkinson's disease":                             'parkinsons',
-    'Physical activity':                               'activity',
-    'Plasma':                                          'plasma',
-    'Platelet':                                        'platlet',
-    'Pregnancy-related':                               'pregnancy',
-    'Prostate cancer':                                 'prostate_cancer',
-    'Protein expression':                              'protein_expression',
-    'Pulmonary':                                       'pulmonary',
-    'Quantitative trait(s)':                           'quantitative',
-    'Radiation':                                       'radiation',
-    'Rectal cancer':                                   'rectal_cancer',
-    'Renal':                                           'renal',
-    'Renal cancer':                                    'renal_cancer',
-    'Reproductive':                                    'reproductive',
-    'Rheumatoid arthritis':                            'rheumatoid',
-    'Salmonella':                                      'salmonella',
-    'Schizophrenia':                                   'schizophrenia',
-    'Serum':                                           'serum',
-    'Sickle cell anemia':                              'sickle_cell',
-    'Skin cancer':                                     'skin_cancer',
-    'Skin-related':                                    'skin',
-    'Sleep':                                           'sleep',
-    'Smallpox':                                        'smallpox',
-    'Smoking':                                         'smoking',
-    'Social':                                          'social',
-    'Stone':                                           'stone',
-    'Stroke':                                          'stroke',
-    'Subclinical CVD':                                 'subclin_cvd',
-    'Surgery':                                         'surgery',
-    'Systemic lupus erythematosus (SLE)':              'sle',
-    'T2D-related':                                     't2d_related',
-    'Testicular cancer':                               'testicular',
-    'Thrombosis':                                      'thrombosis',
-    'Thyroid':                                         'thyroid',
-    'Thyroid cancer':                                  'thyroid_cancer',
-    'Treatment response':                              'treatment_response',
-    'Treatment-related':                               'treatment',
-    'Tuberculosis':                                    'tb',
-    'Type 1 diabetes (T1D)':                           't2d',
-    'Type 2 diabetes (T2D)':                           't1d',
-    'Ulcerative colitis':                              'ulc_colitis',
-    'Upper airway tract cancer':                       'upper_airway_cancer',
-    'Urinary':                                         'urinary',
-    'Uterine cancer':                                  'uterine_cancer',
-    'Uterine fibroids':                                'uterine_fibroids',
-    'Vaccine':                                         'vaccine',
-    'Valve':                                           'valve',
-    'Vasculitis':                                      'vasculitis',
-    'Venous':                                          'venous',
-    'Weight':                                          'weight',
-    'Wound':                                           'wound',
-    'miRNA':                                           'mirna',
-}
-
-pop_correction = {'European/Unspecified': 'European'}
+__all__ = ["get_session", "initialize_database"]
 
 ###############################################################################
 #                               Core Functions                                #
@@ -301,9 +91,9 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
     print('Dropping and creating database tables, this may take a while if',
           'the old database is large.')
     if _config['DEFAULT']['DatabaseType'] == 'sqlite':
-        cfile =_os.path.isfile(_config['sqlite']['DatabaseFile'])
-        if_os.path.isfile(cfile):
-           _os.remove(cfile)
+        cfile = _os.path.isfile(_config['sqlite']['DatabaseFile'])
+        if _os.path.isfile(cfile):
+            _os.remove(cfile)
     _Base.metadata.drop_all(engine)
     _Base.metadata.create_all(engine)
     print('Tables created.')
@@ -422,7 +212,7 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
                 population = None
 
             # Set populaion flags
-            pflag = PopFlag
+            pflag = _PopFlag
             disc_pop = pflag(0)
             rep_pop  = pflag(0)
             l = len(f)
@@ -504,7 +294,7 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
                 'population':       population,
                 'total':            int(f[20]),
                 'total_disc':       int(f[21]),
-                'disc_pops':        int(disc_pop),
+                'disc_pop_flag':    int(disc_pop),
                 'european':         int(f[22]) if l > 22 and f[22] else None,
                 'african':          int(f[23]) if l > 23 and f[23] else None,
                 'east_asian':       int(f[24]) if l > 24 and f[24] else None,
@@ -518,7 +308,7 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
                 'filipino':         int(f[32]) if l > 32 and f[32] else None,
                 'indonesian':       int(f[33]) if l > 33 and f[33] else None,
                 'total_rep':        int(f[34]) if l > 34 and f[34] else None,
-                'rep_pops':         int(rep_pop),
+                'rep_pop_flag':     int(rep_pop),
                 'rep_european':     int(f[35]) if l > 35 and f[35] else None,
                 'rep_african':      int(f[36]) if l > 36 and f[36] else None,
                 'rep_east_asian':   int(f[37]) if l > 37 and f[37] else None,
@@ -800,10 +590,7 @@ def _open_zipped(infile, mode='r', encoding='utf-8'):
         return infile
     if isinstance(infile, str):
         if infile.endswith('.gz'):
-            return gzip.open(infile, mode)
+            return _zopen(infile, mode)
         if infile.endswith('.bz2'):
-            if hasattr(bz2, 'open'):
-                return bz2.open(infile, mode)
-            else:
-                return bz2.BZ2File(infile, p2mode)
+            return _bopen(infile, mode)
         return open(infile, p2mode, encoding=encoding)

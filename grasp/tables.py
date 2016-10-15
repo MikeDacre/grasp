@@ -2,26 +2,33 @@
 Table descriptions in SQLAlchemy ORM.
 
        Created: 2016-10-08
- Last modified: 2016-10-14 13:15
+ Last modified: 2016-10-14 19:16
 
 """
-from sqlalchemy import Table as _Table
-from sqlalchemy import Column as _Column
-from sqlalchemy import Index as _Index
+# Database Table Descriptors
+from sqlalchemy import Table      as _Table
+from sqlalchemy import Column     as _Column
+from sqlalchemy import Index      as _Index
 from sqlalchemy import ForeignKey as _ForeignKey
 from sqlalchemy import BigInteger as _BigInteger
-from sqlalchemy import Integer as _Integer
-from sqlalchemy import String as _String
-from sqlalchemy import Float as _Float
-from sqlalchemy import Date as _Date
-from sqlalchemy import _Boolean as _Boolean
+from sqlalchemy import Integer    as _Integer
+from sqlalchemy import String     as _String
+from sqlalchemy import Float      as _Float
+from sqlalchemy import Date       as _Date
+from sqlalchemy import Boolean    as _Boolean
+
+from sqlalchemy.orm             import relationship     as _relationship
 from sqlalchemy.ext.declarative import declarative_base as _declarative_base
-from sqlalchemy.orm import relationship as _relationship
+
+# Flags
+from .ref import PopFlag as _PopFlag
+
+# MyVariant functions
+import myvariant
 
 __all__ = ["SNP", "Phenotype", "PhenoCats", "Platform", "Population"]
 
 Base = _declarative_base()
-
 
 ###############################################################################
 #                             Association Tables                              #
@@ -44,7 +51,6 @@ study_plat_assoc = _Table(
     _Column('study_id', _Integer, _ForeignKey('studies.id')),
     _Column('platform_id', _Integer, _ForeignKey('platforms.id'))
 )
-
 
 ###############################################################################
 #                               Database Tables                               #
@@ -139,6 +145,36 @@ class SNP(Base):
         'EqtlMethMetabStudy':  'EqtlMethMetabStudy'
     }
 
+    @property
+    def snp_loc(self):
+        """Return a simple string containing the SNP location."""
+        return "{}:{}".format(self.chrom, self.pos)
+
+    @property
+    def hvgs_ids(self):
+        """Get the HVGS ID from myvariant"""
+        if not hasattr(self, '_hvgs_ids'):
+            mv = myvariant.MyVariantInfo()
+            q = mv.query(self.snp_loc, fields='id', as_dataframe=True)
+            self._hvgs_ids = q['hits'].tolist()
+        return self._hvgs_ids
+
+    def get_variant_info(self, fields="dbsnp", pandas=True):
+        """Use the myvariant API to get info about this SNP.
+
+        Note that this service can be very slow.
+        It will be faster to query multiple SNPs.
+
+        :fields: Choose fields to display from:
+                 docs.myvariant.info/en/latest/doc/data.html#available-fields
+                 Good choices are 'dbsnp', 'clinvar', or 'gwassnps'
+                 Can also use 'grasp' to get a different version of this info.
+        :pandas: Return a dataframe instead of dictionary.
+        """
+        mv = myvariant.MyVariantInfo()
+        return mv.getvariants(self.hvgs_ids, fields=fields,
+                              as_dataframe=pandas, df_index=True)
+
     def __repr__(self):
         """Display information about the table."""
         return "{} ({}) <{}:{} pheno: {} study: {}".format(
@@ -194,7 +230,7 @@ class Study(Base):
                                     backref="studies")
     total            = _Column(_Integer)
     total_disc       = _Column(_Integer)
-    disc_pops        = _Column(_Integer, index=True)  # Will hold a bitwise flag
+    disc_pop_flag    = _Column(_Integer, index=True)  # Will hold a bitwise flag
     european         = _Column(_Integer)
     african          = _Column(_Integer)
     east_asian       = _Column(_Integer)
@@ -204,11 +240,11 @@ class Study(Base):
     micronesian      = _Column(_Integer)
     arab             = _Column(_Integer)
     mixed            = _Column(_Integer)
-    unspecified       = _Column(_Integer)
+    unspecified      = _Column(_Integer)
     filipino         = _Column(_Integer)
     indonesian       = _Column(_Integer)
     total_rep        = _Column(_Integer)
-    rep_pops         = _Column(_Integer, index=True)  # Will hold a bitwise flag
+    rep_pop_flag     = _Column(_Integer, index=True)  # Will hold a bitwise flag
     rep_european     = _Column(_Integer)
     rep_african      = _Column(_Integer)
     rep_east_asian   = _Column(_Integer)
@@ -280,12 +316,22 @@ class Study(Base):
     }
 
     @property
+    def disc_pops(self):
+        """Convert disc_pop_flag to PopFlag."""
+        return _PopFlag(self.disc_pop_flag)
+
+    @property
+    def rep_pops(self):
+        """Convert rep_pop_flag to PopFlag."""
+        return _PopFlag(self.rep_pop_flag)
+
+    @property
     def population_information(self):
         """Display a summary of population data."""
         outstr = ["Primary population: {}\n".format(self.population.population),
                   "Individuals: {}\n".format(self.total),
                   "Discovery populations: {}; Total: {}\n".format(
-                      self.disc_pops.to_simple_str, self.total_disc
+                      self.disc_pops.to_simple_str(), self.total_disc
                   )]
         for pop in ['european', 'african', 'east_asian',
                     'south_asian', 'hispanic', 'native',
@@ -294,7 +340,7 @@ class Study(Base):
             outstr.append('\t{}: {}\n'.format(pop, eval('self.' + pop)))
 
         outstr.append("Replication populations: {}; Total: {}\n".format(
-            self.rep_pops.to_simple_str, self.total_rep
+            self.rep_pops.to_simple_str(), self.total_rep
         ))
         for pop in ['european', 'african', 'east_asian',
                     'south_asian', 'hispanic', 'native',
@@ -306,8 +352,8 @@ class Study(Base):
         """Display informaertn about this study."""
         return "{} <{}:{} {} ({}; Disc Pops: {}; Rep Pops: {})>".format(
             self.id, self.author, self.journal, self.title,
-            self.phenotype_desc, self.disc_pops.to_simple_str,
-            self.rep_pops.to_simple_str)
+            self.phenotype.phenotype, self.disc_pops.to_simple_str(),
+            self.rep_pops.to_simple_str())
 
     def __str__(self):
         """Display refertnce."""

@@ -9,7 +9,7 @@ A Simple GRASP (grasp.nhlbi.nih.gov) API based on SQLAlchemy and Pandas
   ORGANIZATION: Stanford University
        LICENSE: MIT License, property of Stanford, use as you wish
        CREATED: 2016-11-08
- Last modified: 2016-10-12 16:57
+ Last modified: 2016-10-14 15:12
 
    DESCRIPTION: This is the front-end to a python grasp api, intended to allow
                 easy database creation and simple querying.
