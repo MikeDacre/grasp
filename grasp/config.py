@@ -1,18 +1,20 @@
 """
 Manage a persistent configuration for the database.
-
-       CREATED: 2016-10-10
- Last modified: 2016-10-12 16:56
-
 """
 import os
 import configparser
 import readline
 
 CONFIG_FILE = os.path.expanduser("~/.grasp")
+"""The PATH to the config file."""
 
 config = configparser.ConfigParser()
+"""A globally accessible ConfigParger object, initialized with CONFIG_FILE."""
+
 config.read(CONFIG_FILE)
+
+__all__ = ['config', 'CONFIG_FILE', 'init_config', 'init_config_interactive',
+           'write_config']
 
 
 ###############################################################################
@@ -21,7 +23,11 @@ config.read(CONFIG_FILE)
 
 
 def init_config_interactive():
-    """Interact with the user to create a new config."""
+    """Interact with the user to create a new config.
+
+    Uses readline autocompletion to make setup easier.
+
+    """
     # Use tab completion
     t = tabCompleter()
     readline.set_completer_delims('\t')
@@ -78,7 +84,18 @@ def init_config_interactive():
 
 
 def init_config(db_type, db_file='', db_host='', db_user='', db_pass=''):
-    """Create an initial config file."""
+    """Create an initial config file.
+
+    Args:
+        db_type: 'sqlite/mysql/postgresql'
+        db_file: PATH to sqlite database file
+        db_host: Hostname for mysql or postgresql server
+        db_user: Username for mysql or postgresql server
+        db_pass: Password for mysql or postgresql server (not secure)
+
+    Returns:
+        None: NoneType
+    """
     if os.path.exists(CONFIG_FILE):
         os.remove(CONFIG_FILE)
     config['DEFAULT'] = {'DatabaseType': db_type}
@@ -107,7 +124,9 @@ class tabCompleter(object):
     the filesystem or from a list.
 
     Taken from:
-        https://gist.github.com/iamatypeofwalrus/5637895
+
+        `https://gist.github.com/iamatypeofwalrus/5637895`_
+
     """
 
     def _listdir(self, root):

@@ -1,12 +1,10 @@
 """
 Holds reference objects for use elsewhere in the module.
-
-       Created: 2016-47-14 16:10
- Last modified: 2016-10-14 17:01
-
 """
 # Bitwise flags
 from flags import Flags as _Flags
+
+__all__ = ['PopFlag', 'pheno_synonyms']
 
 ###############################################################################
 #                          Population Bitwise Flags                           #

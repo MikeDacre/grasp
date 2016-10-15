@@ -1,9 +1,10 @@
 """
-Table descriptions in SQLAlchemy ORM.
+GRASP table descriptions in SQLAlchemy ORM.
 
-       Created: 2016-10-08
- Last modified: 2016-10-15 01:59
+These tables do not exist in the GRASP data, which is a single flat file. By
+separating the data into these tables querying is much more efficient.
 
+This submodule should only be used for querying.
 """
 from collections import OrderedDict as _od
 
@@ -31,6 +32,7 @@ from .ref import PopFlag as _PopFlag
 __all__ = ["SNP", "Phenotype", "PhenoCats", "Platform", "Population"]
 
 Base = _declarative_base()
+"""The SQLAlchemy Base for the database."""
 
 ###############################################################################
 #                             Association Tables                              #
@@ -61,7 +63,19 @@ study_plat_assoc = _Table(
 
 class SNP(Base):
 
-    """An SQLAlchemy Talble for GRASP SNPs"""
+    """An SQLAlchemy Talble for GRASP SNPs.
+
+    Study and phenotype information are pushed to other tables to minimize
+    table size and make querying easier.
+
+    Table Name:
+        'snps'
+
+    Attributes:
+        int:      The integer of this class is the ID number of the row
+        str:      The string of this class is the 'chr:pos' of the SNP
+        hvgs_ids: A list of HGVS IDs for this SNP
+    """
 
     __tablename__ = "snps"
 
@@ -146,6 +160,7 @@ class SNP(Base):
         ('UniProt',            ('String',       'UniProt') ),
         ('EqtlMethMetabStudy', ('String',       'EqtlMethMetabStudy') ),
     ])
+    """A description of all columns in this table."""
 
     @property
     def snp_loc(self):
@@ -154,7 +169,7 @@ class SNP(Base):
 
     @property
     def hvgs_ids(self):
-        """Get the HVGS ID from myvariant"""
+        """The HVGS ID from myvariant."""
         if not hasattr(self, '_hvgs_ids'):
             mv = myvariant.MyVariantInfo()
             q = mv.query(self.snp_loc, fields='id', as_dataframe=True)
@@ -167,11 +182,16 @@ class SNP(Base):
         Note that this service can be very slow.
         It will be faster to query multiple SNPs.
 
-        :fields: Choose fields to display from:
-                 docs.myvariant.info/en/latest/doc/data.html#available-fields
-                 Good choices are 'dbsnp', 'clinvar', or 'gwassnps'
-                 Can also use 'grasp' to get a different version of this info.
-        :pandas: Return a dataframe instead of dictionary.
+        Args:
+            fields: Choose fields to display from:
+                    `docs.myvariant.info/en/latest/doc/data.html#available-fields`_
+                    Good choices are 'dbsnp', 'clinvar', or 'gwassnps'
+                    Can also use 'grasp' to get a different version of this
+                    info.
+            pandas: Return a dataframe instead of dictionary.
+
+        Returns:
+            A dictionary or a dataframe.
         """
         mv = myvariant.MyVariantInfo()
         return mv.getvariants(self.hvgs_ids, fields=fields,
@@ -190,12 +210,34 @@ class SNP(Base):
 
     def __str__(self):
         """Return coordinates."""
-        return "{}:{}".format(self.chrom, self.pos)
+        return self.snp_loc
 
 
 class Study(Base):
 
-    """To store study information."""
+    """An SQLAlchemy table to store study information.
+
+    This table provides easy ways to query for SNPs by study information,
+    including population and phenotype.
+
+    Note: `disc_pop_flag` and `rep_pop_flag` are integer representations of
+    a bitwise flag describing population, defined in ref.PopFlag. To see the
+    string representation of this property, lookup `disc_pops` or `rep_pops`.
+
+    Table Name:
+        studies
+
+    Attributes:
+        int:       The integer ID number of this row.
+        str:       Summary data on this study.
+        len:       The number of individuals in this study.
+        disc_pops: A string displaying the number of discovery poplations.
+        rep_pops:  A string displaying the number of replication poplations.
+
+        population_information:
+            A multi-line string describing the populations in this study.
+
+    """
 
     __tablename__ = "studies"
 
@@ -318,6 +360,7 @@ class Study(Base):
         ('sample_size',      ('String',       'Initial Sample Size, string description of integer population counts above.') ),
         ('replication_size', ('String',       'Replication Sample Size, string description of integer population counts above.') ),
     ])
+    """A description of all columns in this table."""
 
     @property
     def disc_pops(self):
@@ -380,7 +423,20 @@ class Study(Base):
 
 class Phenotype(Base):
 
-    """To store the primary phenotype."""
+    """An SQLAlchemy table to store the primary phenotype.
+
+    Table Name:
+        'phenos'
+
+    Columns:
+        phenotype: The string phenotype from the GRASP DB, unique.
+        alias:     A short representation of the phenotype, not unique.
+        studies:   A link to the studies table.
+
+    Attributes:
+        int:  The ID number.
+        str:  The name of the phenotype.
+    """
 
     __tablename__ = "phenos"
 
@@ -407,7 +463,21 @@ class Phenotype(Base):
 
 class PhenoCats(Base):
 
-    """To store the lists of phenotype categories."""
+    """An SQLAlchemy table to store the lists of phenotype categories.
+
+    Table Name:
+        'pheno_cats'
+
+    Columns:
+        category: The category from the grasp database, unique.
+        alias:    An easy to use alias of the category, not unique.
+        snps:     A link to all SNPs in this category.
+        studies:  A link to all studies in this category.
+
+    Attributes:
+        int: The PhenoCat ID
+        str: The category name
+    """
 
     __tablename__ = "pheno_cats"
 
@@ -438,7 +508,19 @@ class PhenoCats(Base):
 
 class Platform(Base):
 
-    """To store the platform information."""
+    """An SQLAlchemy table to store the platform information.
+
+    Table Name:
+        'platforms'
+
+    Columns:
+        platform: The name of the platform from GRASP.
+        studies:  A link to all studies using this platform.
+
+    Attributes:
+        int: The ID number of this platform
+        str: The name of the platform
+    """
 
     __tablename__ = "platforms"
 
@@ -468,7 +550,20 @@ class Platform(Base):
 
 class Population(Base):
 
-    """To store the platform information."""
+    """An SQLAlchemy table to store the platform information.
+
+    Table Name:
+        'populations'
+
+    Columns:
+        population: The name of the population.
+        studies:    A link to all studies in this population.
+        snps:       A link to all SNPs in this populations.
+
+    Attributes:
+        int: Population ID number
+        str: The name of the population
+    """
 
     __tablename__ = "populations"
 

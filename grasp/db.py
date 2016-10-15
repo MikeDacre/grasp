@@ -1,9 +1,10 @@
 """
 Functions for managing the GRASP database.
 
-       Created: 2016-10-08
- Last modified: 2016-10-14 17:31
-
+`get_session()` is used everywhere in the module to create a connection to the
+database. `initialize_database()` is used to build the database from the GRASP
+file. It takes about an hour 90 minutes to run and will overwrite any existing
+database.
 """
 import os as _os
 from re   import compile  as _recompile
@@ -51,7 +52,15 @@ __all__ = ["get_session", "initialize_database"]
 
 
 def get_session(echo=False):
-    """Return a session and engine, uses config file."""
+    """Return a session and engine, uses config file.
+
+    Args:
+        echo: Echo all SQL to the console.
+
+    Returns:
+        session, engine: A SQLAlchemy session and engine object corresponding
+                         to the grasp database for use in querying.
+    """
     db_type = _config['DEFAULT']['DatabaseType']
     if db_type == 'sqlite':
         engine_string = ('sqlite:///{db_file}'
@@ -72,7 +81,7 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
     """Create the database quickly.
 
     :study_file:   Tab delimited GRASP study file, available here:
-                   github.com/MikeDacre/grasp/blob/master/grasp_studies.txt
+                   `<github.com/MikeDacre/grasp/blob/master/grasp_studies.txt>`_
     :grasp_file:   Tab delimited GRASP file.
     :commit_every: How many rows to go through before commiting to disk.
     :progress:     Display a progress bar (db length hard coded).

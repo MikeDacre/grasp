@@ -1,9 +1,6 @@
 """
-A mix of functions to make querying the database faster.
-
-       Created: 2016-49-11 07:10
- Last modified: 2016-10-15 02:00
-
+A mix of functions to make querying the database and analyzing the results
+faster.
 """
 import pandas as _pd
 import myvariant as _mv
@@ -13,7 +10,9 @@ from . import db as _db
 from . import ref as _ref
 from . import tables as t
 
-__all__ = ["get_studies", "get_snps", "get_phenotypes", "get_populations"]
+__all__ = ["get_studies", "get_snps", "get_variant_info", "get_pop_flags",
+           "get_phenotypes", "get_phenotype_categories", "get_populations",
+           "get_population_flags", "get_study_columns", "get_snp_columns"]
 
 
 ###############################################################################
@@ -29,73 +28,78 @@ def get_studies(primary_phenotype=None, pheno_cats=None, pheno_cats_alias=None,
 
     There are two ways to query both phenotype and population.
 
-    Phenotype
-    ---------
+    Phenotype:
+        GRASP provides a 'primary phenotype' for each study, which are fairly
+        poorly curated. They also provide a list of phenotype categories, which
+        are well curated. The problem with the categories is that there are
+        multiple per study and some are to general to be useful. If using
+        categories be sure to post filter the study list.
 
-    GRASP provides a 'primary phenotype' for each study, which are fairly
-    poorly curated. They also provide a list of phenotype categories, which
-    are well curated. The problem with the categories is that there are
-    multiple per study and some are to general to be useful. If using
-    categories be sure to post filter the study list.
+        Note: I have made a list of aliases for the phenotype categories to
+        make them easier to type. Use pheno_cats_alias for that.
 
-    Note: I have made a list of aliases for the phenotype categories to make
-    them easier to type. Use pheno_cats_alias for that.
+    Population:
+        Each study has a primary population (list available with
+        'get_populations') but some studies also have other populations in the
+        cohort. GRASP indexes all population counts, so those can be used to
+        query also. To query these use `has_` or `only_` (exclusive) parameters,
+        you can query either discovery populations or replication populations.
+        Note that you cannot provide both `has_` and `only_` parameters for the
+        same population type.
 
-    Population
-    ----------
+        For doing population specific analyses most of the time you will want
+        the excl_disc_pop query.
 
-    Each study has a primary population (list available with 'get_populations')
-    but some studies also have other populations in the cohort. GRASP indexes
-    all population counts, so those can be used to query also. To query these
-    use has_ or excl_ (exclusive) parameters, you can query either discovery
-    populations or replication populations. Note that you cannot provide both
-    has_ and excl_ parameters for the same population type.
+    Argument Description:
+        Phenotype Arguments are 'primary_phenotype', 'pheno_cats', and
+        'pheno_cats_alias'.
 
-    For doing population specific analyses most of the time you will want the
-    excl_disc_pop query.
+        Only provide one of pheno_cats or pheno_cats_alias
 
-    Params
-    ------
+        Population Arguments are `primary_pop`, `has_disc_pop`, `has_rep_pop`,
+        `only_disc_pop`, `only_rep_pop`.
 
-    Pheno
-    .....
+        `primary_pop` is a simple argument, the others use bitwise flags for
+        lookup.
 
-    :primary_phenotype: Phenotype of interest, string or list of strings.
-    :pheno_cats:        Phenotype category of interest.
-    :pheno_cats_alias:  Phenotype category of interest.
+        The easiest way to use the following parameters is with the
+        _ref.PopFlag object. It uses py-flags. For example::
 
-    Only provide one of pheno_cats or pheno_cats_alias
+            pops = _ref.PopFlag.eur | _ref.PopFlag.afr
 
-    Pop
-    ...
+        In addition you can provide a list of strings correcponding to PopFlag
+        attributes.
 
-    :primary_pop:  Query the primary population, string or list of strings.
+        Note: the `only_` parameters work as ANDs, not ORs. So
+        only_disc_pop='eur|afr' will return those studies that have BOTH
+        european and african discovery populations, but no other discovery
+        populations. On the other hand, `has_` works as an OR, and will return
+        any study with any of the spefified populations.
 
-    The easiest way to use the following parameters is with the _ref.PopFlag
-    object. It uses py-flags. For example:
-        pops = _ref.PopFlag.eur | _ref.PopFlag.afr
+    Args:
+        primary_phenotype: Phenotype of interest, string or list of strings.
+        pheno_cats:        Phenotype category of interest.
+        pheno_cats_alias:  Phenotype category of interest.
 
-    In addition you can provide a list of strings correcponding to PopFlag
-    attributes.
+        primary_pop:       Query the primary population, string or list of
+                           strings.
 
-    :has_disc_pop:  Return all studies with these discovery populations
-    :has_rep_pop:   Return all studies with these replication populations
-    :only_disc_pop: Return all studies with ONLY these discovery populations
-    :only_rep_pop:  Return all studies with ONLY these replication populations
+        has_disc_pop:      Return all studies with these discovery populations
+        has_rep_pop:       Return all studies with these replication
+                           populations
+        only_disc_pop:     Return all studies with ONLY these discovery
+                           populations
+        only_rep_pop:      Return all studies with ONLY these replication
+                           populations
 
-    Note: the only_ parameters work as ANDs, not ORs. So
-    only_disc_pop='eur|afr' will return those studies that have BOTH european
-    and african discovery populations, but no other discovery populations. On
-    the other hand, has_ works as an OR, and will return any study with any
-    of the spefified populations.
+        query:             Return the query instead of the list of study
+                           objects.
+        count:             Return a count of the number of studies.
+        pandas:            Return a dataframe of study information instead
+                           of the list.
 
-    General
-    .......
-
-    :query:   Return the query instead of the list of study objects.
-    :count:   Return a count of the number of studies.
-    :pandas:  Return a dataframe of study information instead of the list.
-    :returns: A list of study objects, a query, or a dataframe.
+    Returns:
+        A list of study objects, a query, or a dataframe.
 
     """
     s, e = _db.get_session()
@@ -249,7 +253,7 @@ def get_variant_info(snp_list, fields="dbsnp", pandas=True):
 
     :snp_list: A list of SNP objects or 'chr:loc'
     :fields:   Choose fields to display from:
-                  docs.myvariant.info/en/latest/doc/data.html#available-fields
+                  `<docs.myvariant.info/en/latest/doc/data.html#available-fields>`_
                   Good choices are 'dbsnp', 'clinvar', or 'gwassnps'
                   Can also use 'grasp' to get a different version of this info.
     :pandas:   Return a dataframe instead of dictionary.
