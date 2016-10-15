@@ -69,12 +69,16 @@ class SNP(Base):
     table size and make querying easier.
 
     Table Name:
-        'snps'
+        snps
+
+    Columns:
+        Described in the columns attribute
 
     Attributes:
-        int:      The integer of this class is the ID number of the row
-        str:      The string of this class is the 'chr:pos' of the SNP
+        int:      The ID number of the SNP, usually the NHLBIkey
+        str:      SNP loction expressed as 'chr:pos'
         hvgs_ids: A list of HGVS IDs for this SNP
+        columns:  A dictionary of all columns 'column_name'=>('type', 'desc')
     """
 
     __tablename__ = "snps"
@@ -227,12 +231,16 @@ class Study(Base):
     Table Name:
         studies
 
+    Columns:
+        Described in the columns attribute.
+
     Attributes:
-        int:       The integer ID number of this row.
+        int:       The integer ID number, usually the PMID, unless not indexed.
         str:       Summary data on this study.
         len:       The number of individuals in this study.
         disc_pops: A string displaying the number of discovery poplations.
         rep_pops:  A string displaying the number of replication poplations.
+        columns:   A dictionary of all columns 'column_name'=>('type', 'desc')
 
         population_information:
             A multi-line string describing the populations in this study.
@@ -426,7 +434,7 @@ class Phenotype(Base):
     """An SQLAlchemy table to store the primary phenotype.
 
     Table Name:
-        'phenos'
+        phenos
 
     Columns:
         phenotype: The string phenotype from the GRASP DB, unique.
@@ -466,7 +474,7 @@ class PhenoCats(Base):
     """An SQLAlchemy table to store the lists of phenotype categories.
 
     Table Name:
-        'pheno_cats'
+        pheno_cats
 
     Columns:
         category: The category from the grasp database, unique.
@@ -511,7 +519,7 @@ class Platform(Base):
     """An SQLAlchemy table to store the platform information.
 
     Table Name:
-        'platforms'
+        platforms
 
     Columns:
         platform: The name of the platform from GRASP.
@@ -553,7 +561,7 @@ class Population(Base):
     """An SQLAlchemy table to store the platform information.
 
     Table Name:
-        'populations'
+        populations
 
     Columns:
         population: The name of the population.
