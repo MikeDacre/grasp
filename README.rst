@@ -2,7 +2,7 @@
 Simple Python GRASP API
 .......................
 
-Version: 0.1.3a (alpha)
+Version: 0.1.4b (beta)
 
 This module contains a Python 3 API to work with the GRASP database. The
 database must be downloaded and initialized locally. The default is to use an
