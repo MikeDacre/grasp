@@ -24,6 +24,9 @@ To read more about GRASP, visit the `official page <https://grasp.nhlbi.nih.gov/
 For reference information (e.g. column, population, and phenotype lists) see
 `the wiki <https://github.com/MikeDacre/grasp/wiki>`_.
 
+For complete API documentation, go to the
+`documentation site <https://mikedacre.github.io/grasp/>`_
+
 .. contents:: **Contents**
 
 ============
