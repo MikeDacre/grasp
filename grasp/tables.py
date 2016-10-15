@@ -2,9 +2,11 @@
 Table descriptions in SQLAlchemy ORM.
 
        Created: 2016-10-08
- Last modified: 2016-10-14 19:16
+ Last modified: 2016-10-15 01:59
 
 """
+from collections import OrderedDict as _od
+
 # Database Table Descriptors
 from sqlalchemy import Table      as _Table
 from sqlalchemy import Column     as _Column
@@ -20,11 +22,11 @@ from sqlalchemy import Boolean    as _Boolean
 from sqlalchemy.orm             import relationship     as _relationship
 from sqlalchemy.ext.declarative import declarative_base as _declarative_base
 
-# Flags
-from .ref import PopFlag as _PopFlag
-
 # MyVariant functions
 import myvariant
+
+# Flags
+from .ref import PopFlag as _PopFlag
 
 __all__ = ["SNP", "Phenotype", "PhenoCats", "Platform", "Population"]
 
@@ -74,16 +76,16 @@ class SNP(Base):
     CreationDate       = _Column(_Date)
     population_id      = _Column(_Integer, _ForeignKey('populations.id'))
     population         = _relationship("Population",
-                                      backref="snps")
+                                       backref="snps")
     study_id           = _Column(_Integer, _ForeignKey('studies.id'))
     study              = _relationship("Study",
-                                      back_populates="snps")
+                                       back_populates="snps")
     study_snpid        = _Column(_String)
     paper_loc          = _Column(_String)
     phenotype_desc     = _Column(_String, index=True)
     phenotype_cats     = _relationship("PhenoCats",
-                                      secondary=snp_pheno_assoc,
-                                      back_populates="snps")
+                                       secondary=snp_pheno_assoc,
+                                       back_populates="snps")
     InGene             = _Column(_String)
     NearestGene        = _Column(_String)
     InLincRNA          = _Column(_String)
@@ -106,44 +108,44 @@ class SNP(Base):
 
     _Index('chrom_pos', 'chrom', 'pos')
 
-    columns = {
-        'id':                  'ID (generated from NHLBIKey)',
-        'snpid':               'SNPid(dbSNP134)',
-        'chrom':               'chr(hg19)',
-        'pos':                 'pos(hg19)',
-        'pval':                'Pvalue',
-        'NHLBIkey':            'NHLBIkey',
-        'HUPfield':            'HUPfield',
-        'LastCurationDate':    'LastCurationDate',
-        'CreationDate':        'CreationDate',
-        'population_id':       'Primary key of population table',
-        'population':          'Link to population table',
-        'study_id':            'Primary key of the study table',
-        'study':               'Link to study table',
-        'study_snpid':         'SNPid(in paper)',
-        'paper_loc':           'LocationWithinPaper',
-        'primary_pheno':       'Phenotype',
-        'phenotypes':          'Link to phenotypes',
-        'InGene':              'InGene',
-        'NearestGene':         'NearestGene',
-        'InLincRNA':           'InLincRNA',
-        'InMiRNA':             'InMiRNA',
-        'InMiRNABS':           'InMiRNABS',
-        'dbSNPfxn':            'dbSNPfxn',
-        'dbSNPMAF':            'dbSNPMAF',
-        'dbSNPinfo':           'dbSNPalleles/het/se',
-        'dbSNPvalidation':     'dbSNPvalidation',
-        'dbSNPClinStatus':     'dbSNPClinStatus',
-        'ORegAnno':            'ORegAnno',
-        'ConservPredTFBS':     'ConservPredTFBS',
-        'HumanEnhancer':       'HumanEnhancer',
-        'RNAedit':             'RNAedit',
-        'PolyPhen2':           'PolyPhen2',
-        'SIFT':                'SIFT',
-        'LSSNP':               'LS-SNP',
-        'UniProt':             'UniProt',
-        'EqtlMethMetabStudy':  'EqtlMethMetabStudy'
-    }
+    columns = _od([
+        ('id',                 ('BigInteger',   'ID') ),
+        ('snpid',              ('String',       'SNPid') ),
+        ('chrom',              ('String',       'chr') ),
+        ('pos',                ('Integer',      'pos') ),
+        ('pval',               ('Float',        'Pvalue') ),
+        ('NHLBIkey',           ('String',       'NHLBIkey') ),
+        ('HUPfield',           ('String',       'HUPfield') ),
+        ('LastCurationDate',   ('Date',         'LastCurationDate') ),
+        ('CreationDate',       ('Date',         'CreationDate') ),
+        ('population_id',      ('Integer',      'Primary') ),
+        ('population',         ('relationship', 'Link') ),
+        ('study_id',           ('Integer',      'Primary') ),
+        ('study',              ('relationship', 'Link') ),
+        ('study_snpid',        ('String',       'SNPid') ),
+        ('paper_loc',          ('String',       'LocationWithinPaper') ),
+        ('phenotype_desc',     ('String',       'Phenotype') ),
+        ('phenotype_cats',     ('relationship', 'Link') ),
+        ('InGene',             ('String',       'InGene') ),
+        ('NearestGene',        ('String',       'NearestGene') ),
+        ('InLincRNA',          ('String',       'InLincRNA') ),
+        ('InMiRNA',            ('String',       'InMiRNA') ),
+        ('InMiRNABS',          ('String',       'InMiRNABS') ),
+        ('dbSNPfxn',           ('String',       'dbSNPfxn') ),
+        ('dbSNPMAF',           ('String',       'dbSNPMAF') ),
+        ('dbSNPinfo',          ('String',       'dbSNPalleles') ),
+        ('dbSNPvalidation',    ('String',       'dbSNPvalidation') ),
+        ('dbSNPClinStatus',    ('String',       'dbSNPClinStatus') ),
+        ('ORegAnno',           ('String',       'ORegAnno') ),
+        ('ConservPredTFBS',    ('String',       'ConservPredTFBS') ),
+        ('HumanEnhancer',      ('String',       'HumanEnhancer') ),
+        ('RNAedit',            ('String',       'RNAedit') ),
+        ('PolyPhen2',          ('String',       'PolyPhen2') ),
+        ('SIFT',               ('String',       'SIFT') ),
+        ('LSSNP',              ('String',       'LS') ),
+        ('UniProt',            ('String',       'UniProt') ),
+        ('EqtlMethMetabStudy', ('String',       'EqtlMethMetabStudy') ),
+    ])
 
     @property
     def snp_loc(self):
@@ -227,7 +229,7 @@ class Study(Base):
     imputed          = _Column(_Boolean)
     population_id    = _Column(_Integer, _ForeignKey('populations.id'))
     population       = _relationship("Population",
-                                    backref="studies")
+                                     backref="studies")
     total            = _Column(_Integer)
     total_disc       = _Column(_Integer)
     disc_pop_flag    = _Column(_Integer, index=True)  # Will hold a bitwise flag
@@ -260,60 +262,62 @@ class Study(Base):
     sample_size      = _Column(_String)  # Maybe parse this better
     replication_size = _Column(_String)  # Maybe parse this better
 
-    columns = {
-        'id':               'ID',
-        'pmid':             'PubmedID',
-        'title':            'Study',
-        'author':           '1st_author',
-        'journal':          'Journal',
-        'grasp_ver':        'GRASPversion?',
-        'noresults':        'No results flag',
-        'results':          '#results',
-        'qtl':              'IsEqtl/meQTL/pQTL/gQTL/Metabolmics?',
-        'snps':             'Link to all SNPs in this study',
-        'phenotypes':       'Phenotype categories assigned',
-        'datepub':          'DatePub',
-        'in_nhgri':         'In NHGRI GWAS catalog (8/26/14)?',
-        'locations':        'Specific place(s) mentioned for samples',
-        'mf':               'Includes male/female only analyses in discovery and/or replication?',
-        'mf_only':          'Exclusively male or female study?',
-        'platforms':        'Platform [SNPs passing QC]',
-        'snp_count':        'From "Platform [SNPs passing QC]"',
-        'imputed':          'From "Platform [SNPs passing QC]"',
-        'population_id':    'Primary key of population table',
-        'population':       'GWAS description, link to table',
-        'total':            'Total Discovery + Replication sample size',
-        'total_disc':       'Total discovery samples',
-        'disc_pops':        'A bitwise flag that shows presence/absence of discovery populations',
-        'european':         'European',
-        'african':          'African ancestry',
-        'east_asian':       'East Asian',
-        'south_asian':      'Indian/South Asian',
-        'hispanic':         'Hispanic',
-        'native':           'Native',
-        'micronesian':      'Micronesian',
-        'arab':             'Arab/ME',
-        'mixed':            'Mixed',
-        'unpecified':       'Unspec',
-        'filipino':         'Filipino',
-        'indonesian':       'Indonesian',
-        'total_rep':        'Total replication samples',
-        'rep_pops':         'A bitwise flag that shows presence/absence of replication populations',
-        'rep_european':     'European.1',
-        'rep_african':      'African ancestry.1',
-        'rep_east_asian':   'East Asian.1',
-        'rep_south_asian':  'Indian/South Asian.1',
-        'rep_hispanic':     'Hispanic.1',
-        'rep_native':       'Native.1',
-        'rep_micronesian':  'Micronesian.1',
-        'rep_arab':         'Arab/ME.1',
-        'rep_mixed':        'Mixed.1',
-        'rep_unpecified':   'Unspec.1',
-        'rep_filipino':     'Filipino.1',
-        'rep_indonesian':   'Indonesian.1',
-        'sample_size':      'Initial Sample Size, string description of integer population counts above.',
-        'replication_size': 'Replication Sample Size, string description of integer population counts above.',
-    }
+    columns = _od([
+        ('id',               ('Integer',      'id') ),
+        ('pmid',             ('String',       'PubmedID') ),
+        ('title',            ('String',       'Study') ),
+        ('journal',          ('String',       'Journal') ),
+        ('author',           ('String',       '1st_author') ),
+        ('grasp_ver',        ('Integer',      'GRASPversion?') ),
+        ('noresults',        ('Boolean',      'No results flag') ),
+        ('results',          ('Integer',      '#results') ),
+        ('qtl',              ('Boolean',      'IsEqtl/meQTL/pQTL/gQTL/Metabolmics?') ),
+        ('snps',             ('relationship', 'Link to all SNPs in this study') ),
+        ('phenotype_id',     ('Integer',      'ID of primary phenotype in Phenotype table') ),
+        ('phenotype',        ('relationship', 'A link to the primary phenotype in the Phenotype table') ),
+        ('phenotype_cats',   ('relationship', 'A link to all phenotype categories assigned in the PhenoCats table') ),
+        ('datepub',          ('Date',         'DatePub') ),
+        ('in_nhgri',         ('Boolean',      'In NHGRI GWAS catalog (8/26/14)?') ),
+        ('locations',        ('String',       'Specific place(s) mentioned for samples') ),
+        ('mf',               ('Boolean',      'Includes male/female only analyses in discovery and/or replication?') ),
+        ('mf_only',          ('Boolean',      'Exclusively male or female study?') ),
+        ('platforms',        ('relationship', 'Link to platforms in the Platform table. Platform [SNPs passing QC]') ),
+        ('snp_count',        ('String',       'From "Platform [SNPs passing QC]"') ),
+        ('imputed',          ('Boolean',      'From "Platform [SNPs passing QC]"') ),
+        ('population_id',    ('Integer',      'Primary key of population table') ),
+        ('population',       ('relationship', 'GWAS description, link to table') ),
+        ('total',            ('Integer',      'Total Discovery + Replication sample size') ),
+        ('total_disc',       ('Integer',      'Total discovery samples') ),
+        ('disc_pop_flag',    ('Integer',      'A bitwise flag that shows presence/absence of discovery populations') ),
+        ('european',         ('Integer',      'European') ),
+        ('african',          ('Integer',      'African ancestry') ),
+        ('east_asian',       ('Integer',      'East Asian') ),
+        ('south_asian',      ('Integer',      'Indian/South Asian') ),
+        ('hispanic',         ('Integer',      'Hispanic') ),
+        ('native',           ('Integer',      'Native') ),
+        ('micronesian',      ('Integer',      'Micronesian') ),
+        ('arab',             ('Integer',      'Arab/ME') ),
+        ('mixed',            ('Integer',      'Mixed') ),
+        ('unpecified',       ('Integer',      'Unspec') ),
+        ('filipino',         ('Integer',      'Filipino') ),
+        ('indonesian',       ('Integer',      'Indonesian') ),
+        ('total_rep',        ('Integer',      'Total replication samples') ),
+        ('rep_pop_flag',     ('Integer',      'A bitwise flag that shows presence/absence of replication populations') ),
+        ('rep_european',     ('Integer',      'European.1') ),
+        ('rep_african',      ('Integer',      'African ancestry.1') ),
+        ('rep_east_asian',   ('Integer',      'East Asian.1') ),
+        ('rep_south_asian',  ('Integer',      'Indian/South Asian.1') ),
+        ('rep_hispanic',     ('Integer',      'Hispanic.1') ),
+        ('rep_native',       ('Integer',      'Native.1') ),
+        ('rep_micronesian',  ('Integer',      'Micronesian.1') ),
+        ('rep_arab',         ('Integer',      'Arab/ME.1') ),
+        ('rep_mixed',        ('Integer',      'Mixed.1') ),
+        ('rep_unpecified',   ('Integer',      'Unspec.1') ),
+        ('rep_filipino',     ('Integer',      'Filipino.1') ),
+        ('rep_indonesian',   ('Integer',      'Indonesian.1') ),
+        ('sample_size',      ('String',       'Initial Sample Size, string description of integer population counts above.') ),
+        ('replication_size', ('String',       'Replication Sample Size, string description of integer population counts above.') ),
+    ])
 
     @property
     def disc_pops(self):
@@ -350,10 +354,11 @@ class Study(Base):
 
     def __repr__(self):
         """Display informaertn about this study."""
-        return "{} <{}:{} {} ({}; Disc Pops: {}; Rep Pops: {})>".format(
-            self.id, self.author, self.journal, self.title,
-            self.phenotype.phenotype, self.disc_pops.to_simple_str(),
-            self.rep_pops.to_simple_str())
+        return '{} <{}:{} "{}" ({}; Pop: {}Disc Pops: {}; Rep Pops: {})>'.\
+            format(self.id, self.author, self.journal, self.title,
+                   self.phenotype.phenotype, self.population.population,
+                   self.disc_pops.to_simple_str(),
+                   self.rep_pops.to_simple_str())
 
     def __str__(self):
         """Display refertnce."""
@@ -388,7 +393,7 @@ class Phenotype(Base):
 
     def __repr__(self):
         """Display information."""
-        return "{} <{} (alias: {})>".format(self.id, self.phenotype,
+        return '{} <"{}" (alias: {})>'.format(self.id, self.phenotype,
                                      self.alias)
 
     def __int__(self):
@@ -419,7 +424,7 @@ class PhenoCats(Base):
 
     def __repr__(self):
         """Display information."""
-        return "{} <{} (alias: {})>".format(self.id, self.category,
+        return '{} <"{}" (alias: {})>'.format(self.id, self.category,
                                      self.alias)
 
     def __int__(self):

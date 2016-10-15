@@ -68,7 +68,7 @@ setup(
     keywords='grasp sqlalchemy',
 
     install_requires=['sqlalchemy', 'pandas', 'tqdm', 'python-dateutil',
-                      'pyflags'],
+                      'pyflags', 'myvariant'],
     packages=['grasp'],
     scripts=scpts,
     cmdclass={'install': CustomInstall},
