@@ -370,7 +370,7 @@ def collapse_dataframe(df, mechanism='median', pvalue_filter=None,
     df_p = df[['loc', 'pval']]
     df.drop('pval', axis=1, inplace=True)
     df_p = df_p.groupby('loc').aggregate([mechanism, 'std', 'count'])
-    df_p.columns = ['pval_{}'.format(mechanism), 'std', 'count']
+    df_p.columns = ['pval', 'std', 'count']
 
     # Flatten the remainder
     df = df.groupby('loc').aggregate(_aggregate_strings)
@@ -390,9 +390,42 @@ def collapse_dataframe(df, mechanism='median', pvalue_filter=None,
     return df
 
 
-def plot_overlapping_snps(series1, series2):
-    """Plot all SNPs that overlap between two pvalue series."""
-    pass
+def intersect_overlapping_series(series1, series2, names=None,
+                                 stats=True, plot=False):
+    """Plot all SNPs that overlap between two pvalue series.
+
+    Args:
+        series: A pandas series object
+        names:  A list of two names to use for the resultant dataframes
+        stats:  Print some stats on the intersection
+        plot:   Plot the resulting intersection
+
+    Returns:
+        DataFrame: with the two series as columns
+    """
+    if isinstance(series1, _pd.DataFrame):
+        series1 = series1.pval
+    if isinstance(series2, _pd.DataFrame):
+        series2 = series2.pval
+    assert isinstance(series1, _pd.Series)
+    assert isinstance(series2, _pd.Series)
+
+    df = _pd.concat([series1, series2], join='inner', axis=1)
+    names = names if names else ['series1', 'series2']
+
+    assert isinstance(names, list)
+
+    df.columns = names
+
+    if stats:
+        print("Series 1 len: {}".format(len(series1)))
+        print("Series 2 len: {}".format(len(series2)))
+        print("Intersected df len: {}".format(len(df)))
+
+    if plot:
+        df.plot()
+
+    return df
 
 
 ###############################################################################

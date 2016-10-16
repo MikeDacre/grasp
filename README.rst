@@ -175,7 +175,8 @@ Example Usage
   # The new dataframes are indexed by 'chr:pos'
 
   # Plot the overlapping SNPs
-  q.plot_overlapping_snps(eur_snps_df.pval_median, afr_snps_df.pval_median)
+  snps = q.intersect_overlapping_series(eur_snps_df.pval_median, afr_snps_df.pval_median)
+  snps.plot()
 
 ====
 ToDo
