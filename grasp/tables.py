@@ -129,7 +129,7 @@ class SNP(Base):
     _Index('chrom_pos', 'chrom', 'pos')
 
     columns = _od([
-        ('id',                 ('BigInteger',   'ID') ),
+        ('id',                 ('BigInteger',   'NHLBIkey') ),
         ('snpid',              ('String',       'SNPid') ),
         ('chrom',              ('String',       'chr') ),
         ('pos',                ('Integer',      'pos') ),
@@ -171,15 +171,15 @@ class SNP(Base):
     @property
     def snp_loc(self):
         """Return a simple string containing the SNP location."""
-        return "{}:{}".format(self.chrom, self.pos)
+        return "chr{}:{}".format(self.chrom, self.pos)
 
     @property
     def hvgs_ids(self):
         """The HVGS ID from myvariant."""
         if not hasattr(self, '_hvgs_ids'):
             mv = myvariant.MyVariantInfo()
-            q = mv.query(self.snp_loc, fields='id', as_dataframe=True)
-            self._hvgs_ids = q['hits'].tolist()
+            self._hvgs_ids = [i['_id'] for i in
+                              mv.query(self.snp_loc, fields='id')['hits']]
         return self._hvgs_ids
 
     def get_variant_info(self, fields="dbsnp", pandas=True):

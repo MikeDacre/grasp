@@ -9,7 +9,7 @@ A Simple GRASP (grasp.nhlbi.nih.gov) API based on SQLAlchemy and Pandas
   ORGANIZATION: Stanford University
        LICENSE: MIT License, property of Stanford, use as you wish
        CREATED: 2016-11-08
- Last modified: 2016-10-14 15:12
+ Last modified: 2016-10-16 13:17
 
    DESCRIPTION: This is the front-end to a python grasp api, intended to allow
                 easy database creation and simple querying.
@@ -22,9 +22,109 @@ import os
 import sys
 import argparse
 
+from textwrap import dedent
+
 from grasp import db
+from grasp import info
 from grasp import config
 
+
+###############################################################################
+#                            RST File Definitions                             #
+###############################################################################
+
+PHENO_CATS = """\
+The following 179 phenotype categories can be searched by alias or category:
+
+{}
+"""
+
+PHENOS = """\
+The following phenotypes are stored in the GRASP database (there are 1,209 of
+them):
+
+{}
+"""
+
+POPS = """\
+The following populations are available in the Population table:
+
+{}
+"""
+
+FLAGS = """\
+The Population table only contains summary level population information, each
+study also has counts of discovery and replication populations. To query
+studies that only contain certain populations, this module uses bitwise flags.
+To make these easier to use, we use the `py-flags
+<https://pypi.python.org/pypi/py-flags>`_ package, and map the following
+population flags:
+
+{}
+"""
+
+TABLE_INFO = """\
+The two important tables with the majority of the data are Study and SNP. In
+addition, phenotype data is stored in Phenotype and PhenoCats, population data
+is in Population, and platforms are in Platform.
+
+.. contents:: **Contents**
+
+Study
+=====
+
+To query studies, it is recommended to use the query.get_studies() function.
+
+{study}
+
+
+SNP
+===
+
+{snp}
+
+Phenotype
+=========
+
+All available phenotypes are available on the `Phenotypes wiki page
+<https://github.com/MikeDacre/grasp/wiki/Phenotypes>`_
+
+- id
+- phenotype
+- studies (link to Study table)
+- snps (link to SNP table)
+
+PhenoCats
+=========
+
+All phenotype categories are available on the `Phenotype Categories wiki page
+<https://github.com/MikeDacre/grasp/wiki/Phenotype-Categories>`_
+
+- id
+- population
+- alias
+- studies (link to Study table)
+- snps (link to SNP table)
+
+Population
+==========
+
+- id
+- population
+- studies (link to Study table)
+- snps (link to SNP table)
+
+All population entries are available on the `Populations wiki page
+<https://github.com/MikeDacre/grasp/wiki/Populations>`_
+
+Platform
+========
+
+- id
+- platform
+- studies (link to Study table)
+- snps (link to SNP table)
+"""
 
 ###############################################################################
 #                            Command Line Running                             #
@@ -42,17 +142,33 @@ def main(argv=None):
 
     subparsers = parser.add_subparsers(dest='modes')
 
-    # Initialize the database
-    init = subparsers.add_parser('init', help="Initialize the database")
-    init.add_argument('study_file',
-                      help="GRASP study file from: " +
-                      "github.com/MikeDacre/grasp/blob/master/grasp2_studies.txt")
-    init.add_argument('grasp_file',
-                      help="GRASP tab delimeted file")
-    init.add_argument('-n', '--no-progress', action='store_false',
-                      help="Do not display a progress bar")
+    # Search database
+    search_info = dedent(
+        """\
+        Query for SNPs in the database.
+        By default returns a tab-delimeted list of SNPs with the following\
+        columns:
+            'snp_id', 'chr', 'pos', 'study_snpid', 'phenotype', 'pval'
 
-    # Initialize config
+        The --extra flag adds these columns:
+            'InGene', 'InMiRNA', 'inLincRNa', 'LSSNP'
+
+        The --study-info flag adds these columns:
+            'study_id (PMID)', 'title'
+
+        The --db-snp flag uses the myvariant API to pull additional data
+        from db_snp.
+        """
+    )
+    search = subparsers.add_parser('search', aliases=['s', 'lookup'],
+                                   description=search_info,
+                                   help="Query database for variants by " +
+                                   "location or id")
+    search.add_argument('query', help="ID, chrom:loc or chrom:start-end")
+    search.add_argument('--studies', action='store_true',
+                        help="Include study title and PMID")
+
+    # Manage config
     conf = subparsers.add_parser('conf', aliases=['config'],
                                  help="Manage local config")
     cgrp = conf.add_mutually_exclusive_group()
@@ -67,6 +183,51 @@ def main(argv=None):
                       help="Initialize the config with default settings. " +
                       "Will ERASE your old config!")
 
+    # Print column info
+    dinfo_info = dedent(
+        """\
+        Write data summaries (also found on the wiki) to a file or the\
+        console.
+
+        Choices:
+            all:                  Will write everything to separate rst files,
+                                  ignores all other flags except `--path`
+            phenotypes:           All primary phenotypes.
+            phenotype_categories: All phenotype categories.
+            populations:          All primary populations.
+            population_flags:     All population flags.
+            snp_columns:          All SNP columns.
+            study_columns:        All Study columns.
+        """
+    dinfo = subparsers.add_parser('info', help="Display database info",
+                                  description=dinfo_info)
+    dinfo.add_argument('display',
+                       choices={'phenotypes', 'phenotype_categories',
+                                'populations', 'population_flags',
+                                'snp_columns', 'study_columns',
+                                'all'},
+                       help="Choice of item to display, if all, results " +
+                       "are written to independant rst files, and optional " +
+                       "args are ignored")
+    dinfo.add_argument('-o', '--out', dest='info_outfile', metavar='',
+                       default=sys.stdout, help='File to write to.')
+    dinfo.add_argument('--path', dest='info_path', metavar='',
+                       default='.', help="PATH to write files to")
+    # Not implemented yet
+    # dinfo.add_argument('--write-as', choices={'table', 'tab', 'list'},
+    #                    default='table', help="How to write the output.")
+
+
+    # Initialize the database
+    init = subparsers.add_parser('init', help="Initialize the database")
+    init.add_argument('study_file',
+                      help="GRASP study file from: " +
+                      "github.com/MikeDacre/grasp/blob/master/grasp2_studies.txt")
+    init.add_argument('grasp_file',
+                      help="GRASP tab delimeted file")
+    init.add_argument('-n', '--no-progress', action='store_false',
+                      help="Do not display a progress bar")
+
     args = parser.parse_args(argv)
 
     if args.modes == 'init':
@@ -77,6 +238,43 @@ def main(argv=None):
         print("Initializing")
         db.initialize_database(args.study_file, args.grasp_file,
                                progress=args.no_progress)
+
+    elif args.modes == 'info':
+        if args.display == 'all':
+            with open(os.path.join(args.info_path, 'table_columns.rst'),
+                      'w') as fout:
+                fout.write(TABLE_INFO.format(
+                    study=info.display_study_columns(),
+                    snp=info.display_snp_columns()
+                ))
+            with open(os.path.join(args.info_path, 'pheno_cats.rst'),
+                      'w') as fout:
+                fout.write(PHENO_CATS.format(
+                    info.get_phenotype_categories(table=True)
+                ))
+            with open(os.path.join(args.info_path, 'phenos.rst'),
+                      'w') as fout:
+                fout.write(PHENOS.format(
+                    info.get_phenotypes(table=True)
+                ))
+            with open(os.path.join(args.info_path, 'pops.rst'),
+                      'w') as fout:
+                fout.write(POPS.format(
+                    info.get_populations(table=True)
+                ))
+            with open(os.path.join(args.info_path, 'pop_flags.rst'),
+                      'w') as fout:
+                fout.write(POPS.format(
+                    info.get_population_flags(table=True)
+                ))
+        else:
+            command = 'display' if args.display == 'study' \
+                or args.display == 'snp' else 'get'
+            with db._open_zipped(os.path.join(args.info_path,
+                                              args.info_outfile),
+                                 'w') as fout:
+                fout.write(eval('{}_{}(table=True)'.format(command,
+                                                           args.display)))
 
     elif args.modes == 'config':
         if args.cdb:

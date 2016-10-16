@@ -428,6 +428,29 @@ def intersect_overlapping_series(series1, series2, names=None,
 
 
 ###############################################################################
+#                              MyVariant Queries                              #
+###############################################################################
+
+
+def get_variant_info(snp_list, fields='dbsnp', pandas=True):
+    """Get variant info for a list of SNPs.
+
+    Args:
+        snp_list: A list of SNP objects or SNP IDs
+        fields:   Choose fields to display from:
+                  `docs.myvariant.info/en/latest/doc/data.html#available-fields`_
+                  Good choices are 'dbsnp', 'clinvar', or 'gwassnps'
+                  Can also use 'grasp' to get a different version of this
+                  info.
+        pandas:   Return a dataframe instead of dictionary.
+
+    Returns:
+        A dictionary or a dataframe.
+    """
+    pass
+
+
+###############################################################################
 #                              Helper Functions                               #
 ###############################################################################
 

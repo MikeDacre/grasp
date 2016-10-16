@@ -137,7 +137,7 @@ def display_snp_columns(display_as='table', write=False):
     Returns:
         A formatted string or None
     """
-    return t.SNP.display_columns(display_as, write)
+    return t.SNP().display_columns(display_as, write)
 
 
 def get_snp_columns(return_as='list'):
@@ -154,7 +154,7 @@ def get_snp_columns(return_as='list'):
     Returns:
         A list or dictionary
     """
-    return t.SNP.get_columns(return_as)
+    return t.SNP().get_columns(return_as)
 
 
 def display_study_columns(display_as='table', write=False):
@@ -173,7 +173,7 @@ def display_study_columns(display_as='table', write=False):
     Returns:
         A formatted string or None
     """
-    return t.Study.display_columns(display_as, write)
+    return t.Study().display_columns(display_as, write)
 
 
 def get_study_columns(return_as='list'):
@@ -190,4 +190,4 @@ def get_study_columns(return_as='list'):
     Returns:
         A list or dictionary
     """
-    return t.Study.get_columns(return_as)
+    return t.Study().get_columns(return_as)
