@@ -97,10 +97,11 @@ class SNP(Base):
     population_id      = _Column(_Integer, _ForeignKey('populations.id'))
     population         = _relationship("Population",
                                        backref="snps")
-    study_id           = _Column(_Integer, _ForeignKey('studies.id'))
+    study_id           = _Column(_Integer, _ForeignKey('studies.id'),
+                                 index=True)
     study              = _relationship("Study",
                                        back_populates="snps")
-    study_snpid        = _Column(_String)
+    study_snpid        = _Column(_String, index=True)
     paper_loc          = _Column(_String)
     phenotype_desc     = _Column(_String, index=True)
     phenotype_cats     = _relationship("PhenoCats",
