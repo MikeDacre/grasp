@@ -9,7 +9,7 @@ A Simple GRASP (grasp.nhlbi.nih.gov) API based on SQLAlchemy and Pandas.
 +---------+-------------------------------------------------+
 | License | MIT License, made at Stanford, use as you wish. |
 +---------+-------------------------------------------------+
-| Version | 0.1.4b                                          |
+| Version | 0.2.0b                                          |
 +---------+-------------------------------------------------+
 
 For an introduction see the `github readme <https://github.com/MikeDacre/grasp>`_
@@ -55,6 +55,14 @@ grasp.query
     :undoc-members:
     :show-inheritance:
 
+grasp.info
+----------
+
+.. automodule:: grasp.info
+    :members:
+    :undoc-members:
+    :show-inheritance:
+ 
 grasp.ref
 ---------
 

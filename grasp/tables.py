@@ -8,6 +8,8 @@ This submodule should only be used for querying.
 """
 from collections import OrderedDict as _od
 
+from tabulate import tabulate as _tb
+
 # Database Table Descriptors
 from sqlalchemy import Table      as _Table
 from sqlalchemy import Column     as _Column
@@ -201,6 +203,67 @@ class SNP(Base):
         return mv.getvariants(self.hvgs_ids, fields=fields,
                               as_dataframe=pandas, df_index=True)
 
+    def get_columns(self, return_as='list'):
+        """Return all columns in the table nicely formatted.
+
+        Display choices:
+            list:       A python list of column names
+            dictionary: A python dictionary of name=>desc
+            long_dict:  A python dictionary of name=>(type, desc)
+
+        Args:
+            return_as:  {table,tab,list,dictionary,long_dict,id_dict}
+
+        Returns:
+            A list or dictionary
+        """
+        cols = self.columns
+        if return_as == 'list':
+            return [i[1] for i in cols.values()]
+        elif return_as == 'dictionary':
+            return {k: v[1] for k, v in cols.items()}
+        elif return_as == 'long_dict':
+            return cols
+        else:
+            raise Exception("'display_as' must be one of {table,tab,list}")
+
+    def display_columns(self, display_as='table', write=False):
+        """Return all columns in the table nicely formatted.
+
+        Display choices:
+            table:      A formatted grid-like table
+            tab:        A tab delimited non-formatted version of table
+            list:       A string list of column names
+
+        Args:
+            display_as: {table,tab,list}
+            write:      If true, print output to console, otherwise return
+                        string.
+
+        Returns:
+            A formatted string or None
+        """
+        cols = self.columns
+        if display_as == 'table':
+            out = _tb(
+                [['Column', 'Description', 'Type']] +\
+                [[k, v[1], v[0]] for k, v in cols.items()],
+                headers='firstrow', tablefmt='grid'
+            )
+        elif display_as == 'tab':
+            out = '\n'.join(
+                ['\t'.join(['Column', 'Description', 'Type'])] +\
+                ['\t'.join([k, v[1], v[0]]) for k, v in cols.items()],
+            )
+        elif display_as == 'list':
+            out = '\n'.join([i[1] for i in cols.values()])
+        else:
+            raise Exception("'display_as' must be one of {table,tab,list}")
+        if write:
+            print(out)
+        else:
+            return out
+
     def __repr__(self):
         """Display information about the table."""
         return "{} ({}) <{}:{} pheno: {} study: {}".format(
@@ -259,22 +322,22 @@ class Study(Base):
     results          = _Column(_Integer)
     qtl              = _Column(_Boolean)
     snps             = _relationship("SNP",
-                                    back_populates='study')
+                                     back_populates='study')
     phenotype_id     = _Column(_Integer, _ForeignKey('phenos.id'),
-                              index=True)
+                               index=True)
     phenotype        = _relationship("Phenotype",
-                                    back_populates="studies")
+                                     back_populates="studies")
     phenotype_cats   = _relationship("PhenoCats",
-                                    secondary=study_pheno_assoc,
-                                    back_populates="studies")
+                                     secondary=study_pheno_assoc,
+                                     back_populates="studies")
     datepub          = _Column(_Date)
     in_nhgri         = _Column(_Boolean)
     locations        = _Column(_String)
     mf               = _Column(_Boolean)
     mf_only          = _Column(_Boolean)
     platforms        = _relationship("Platform",
-                                    secondary=study_plat_assoc,
-                                    back_populates="studies")
+                                     secondary=study_plat_assoc,
+                                     back_populates="studies")
     snp_count        = _Column(_String)
     imputed          = _Column(_Boolean)
     population_id    = _Column(_Integer, _ForeignKey('populations.id'))
@@ -403,6 +466,67 @@ class Study(Base):
                     'filipino', 'indonesian']:
             outstr.append('\t{}: {}\n'.format(pop, eval('self.rep_' + pop)))
 
+    def get_columns(self, return_as='list'):
+        """Return all columns in the table nicely formatted.
+
+        Display choices:
+            list:       A python list of column names
+            dictionary: A python dictionary of name=>desc
+            long_dict:  A python dictionary of name=>(type, desc)
+
+        Args:
+            return_as:  {table,tab,list,dictionary,long_dict,id_dict}
+
+        Returns:
+            A list or dictionary
+        """
+        cols = self.columns
+        if return_as == 'list':
+            return [i[1] for i in cols.values()]
+        elif return_as == 'dictionary':
+            return {k: v[1] for k, v in cols.items()}
+        elif return_as == 'long_dict':
+            return cols
+        else:
+            raise Exception("'display_as' must be one of {table,tab,list}")
+
+    def display_columns(self, display_as='table', write=False):
+        """Return all columns in the table nicely formatted.
+
+        Display choices:
+            table:      A formatted grid-like table
+            tab:        A tab delimited non-formatted version of table
+            list:       A string list of column names
+
+        Args:
+            display_as: {table,tab,list}
+            write:      If true, print output to console, otherwise return
+                        string.
+
+        Returns:
+            A formatted string or None
+        """
+        cols = self.columns
+        if display_as == 'table':
+            out = _tb(
+                [['Column', 'Description', 'Type']] +\
+                [[k, v[1], v[0]] for k, v in cols.items()],
+                headers='firstrow', tablefmt='grid'
+            )
+        elif display_as == 'tab':
+            out = '\n'.join(
+                ['\t'.join(['Column', 'Description', 'Type'])] +\
+                ['\t'.join([k, v[1], v[0]]) for k, v in cols.items()],
+            )
+        elif display_as == 'list':
+            out = '\n'.join([i[1] for i in cols.values()])
+        else:
+            raise Exception("'display_as' must be one of {table,tab,list}")
+        if write:
+            print(out)
+        else:
+            return out
+
     def __repr__(self):
         """Display informaertn about this study."""
         return '{} <{}:{} "{}" ({}; Pop: {}Disc Pops: {}; Rep Pops: {})>'.\
@@ -449,16 +573,16 @@ class Phenotype(Base):
     __tablename__ = "phenos"
 
     id        = _Column(_Integer, primary_key=True,
-                       index=True)
+                        index=True)
     phenotype = _Column(_String, index=True, unique=True)
     alias     = _Column(_String, index=True)
     studies   = _relationship("Study",
-                             back_populates="phenotype")
+                              back_populates="phenotype")
 
     def __repr__(self):
         """Display information."""
         return '{} <"{}" (alias: {})>'.format(self.id, self.phenotype,
-                                     self.alias)
+                                              self.alias)
 
     def __int__(self):
         """Return ID number."""
@@ -490,20 +614,20 @@ class PhenoCats(Base):
     __tablename__ = "pheno_cats"
 
     id       = _Column(_Integer, primary_key=True,
-                      index=True)
+                       index=True)
     category = _Column(_String, index=True, unique=True)
     alias    = _Column(_String, index=True)
     snps     = _relationship("SNP",
-                            secondary=snp_pheno_assoc,
-                            back_populates="phenotype_cats")
+                             secondary=snp_pheno_assoc,
+                             back_populates="phenotype_cats")
     studies  = _relationship("Study",
-                            secondary=study_pheno_assoc,
-                            back_populates="phenotype_cats")
+                             secondary=study_pheno_assoc,
+                             back_populates="phenotype_cats")
 
     def __repr__(self):
         """Display information."""
         return '{} <"{}" (alias: {})>'.format(self.id, self.category,
-                                     self.alias)
+                                              self.alias)
 
     def __int__(self):
         """Return ID number."""
@@ -533,11 +657,11 @@ class Platform(Base):
     __tablename__ = "platforms"
 
     id       = _Column(_Integer, primary_key=True,
-                      index=True)
+                       index=True)
     platform = _Column(_String, index=True, unique=True)
     studies  = _relationship("Study",
-                            secondary=study_plat_assoc,
-                            back_populates="platforms")
+                             secondary=study_plat_assoc,
+                             back_populates="platforms")
 
     def __init__(self, platform):
         """Create self."""
@@ -576,7 +700,7 @@ class Population(Base):
     __tablename__ = "populations"
 
     id         = _Column(_Integer, primary_key=True,
-                        index=True)
+                         index=True)
     population = _Column(_String, index=True, unique=True)
 
     def __init__(self, population):
@@ -594,4 +718,3 @@ class Population(Base):
     def __str__(self):
         """Display platform name."""
         return "{}".format(self.population)
-
