@@ -2,7 +2,13 @@
 Simple Python GRASP API
 .......................
 
-Version: 0.1.4b (beta)
++---------+-------------------------------------------------+
+| Author  | Michael D Dacre <mike.dacre@gmail.com>          |
++---------+-------------------------------------------------+
+| License | MIT License, made at Stanford, use as you wish. |
++---------+-------------------------------------------------+
+| Version | 0.2.0b                                          |
++---------+-------------------------------------------------+
 
 This module contains a Python 3 API to work with the GRASP database. The
 database must be downloaded and initialized locally. The default is to use an
