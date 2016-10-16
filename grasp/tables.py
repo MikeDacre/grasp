@@ -94,7 +94,8 @@ class SNP(Base):
     HUPfield           = _Column(_String)
     LastCurationDate   = _Column(_Date)
     CreationDate       = _Column(_Date)
-    population_id      = _Column(_Integer, _ForeignKey('populations.id'))
+    population_id      = _Column(_Integer, _ForeignKey('populations.id'),
+                                 index=True)
     population         = _relationship("Population",
                                        backref="snps")
     study_id           = _Column(_Integer, _ForeignKey('studies.id'),
@@ -107,8 +108,8 @@ class SNP(Base):
     phenotype_cats     = _relationship("PhenoCats",
                                        secondary=snp_pheno_assoc,
                                        back_populates="snps")
-    InGene             = _Column(_String)
-    NearestGene        = _Column(_String)
+    InGene             = _Column(_String, index=True)
+    NearestGene        = _Column(_String, index=True)
     InLincRNA          = _Column(_String)
     InMiRNA            = _Column(_String)
     InMiRNABS          = _Column(_String)
@@ -341,7 +342,8 @@ class Study(Base):
                                      back_populates="studies")
     snp_count        = _Column(_String)
     imputed          = _Column(_Boolean)
-    population_id    = _Column(_Integer, _ForeignKey('populations.id'))
+    population_id    = _Column(_Integer, _ForeignKey('populations.id'),
+                               index=True)
     population       = _relationship("Population",
                                      backref="studies")
     total            = _Column(_Integer)
