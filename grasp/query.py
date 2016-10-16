@@ -4,15 +4,14 @@ faster.
 """
 import pandas as _pd
 import myvariant as _mv
-from tabulate import tabulate as _tb
 
 from . import db as _db
 from . import ref as _ref
 from . import tables as t
 
-__all__ = ["get_studies", "get_snps", "get_variant_info", "get_pop_flags",
-           "get_phenotypes", "get_phenotype_categories", "get_populations",
-           "get_population_flags", "get_study_columns", "get_snp_columns"]
+__all__ = ["get_studies", "get_snps", "get_variant_info",
+           "find_intersecting_phenotypes", "collapse_dataframe",
+           "intersect_overlapping_series"]
 
 
 ###############################################################################
@@ -433,16 +432,6 @@ def intersect_overlapping_series(series1, series2, names=None,
 ###############################################################################
 
 
-def _aggregate_strings(x):
-    """Converts records to comma separated string."""
-    return ','.join(set([str(i) for i in x]))
-
-
-def _create_loc(x):
-    """Merge chrom and pos columns into 'chrom:pos'."""
-    return '{}:{}'.format(x.chrom, x.pos)
-
-
 def get_pop_flags(pop_flags):
     """Merge a list, string, int, or PopFlag series."""
     if isinstance(pop_flags, _ref.PopFlag):
@@ -460,6 +449,16 @@ def get_pop_flags(pop_flags):
         else:
             raise TypeError('Could not convert population flag into PopFlag')
     return final_flag
+
+
+def _aggregate_strings(x):
+    """Converts records to comma separated string."""
+    return ','.join(set([str(i) for i in x]))
+
+
+def _create_loc(x):
+    """Merge chrom and pos columns into 'chrom:pos'."""
+    return '{}:{}'.format(x.chrom, x.pos)
 
 
 def _chunks(l, n):
@@ -489,148 +488,6 @@ def get_variant_info(snp_list, fields="dbsnp", pandas=True):
         snp_list = [i.snp_loc for i in snp_list]
     return mv.querymany(snp_list, fields=fields, as_dataframe=pandas,
                         df_index=True)
-
-###############################################################################
-#                          Get Category Information                           #
-###############################################################################
-
-
-def get_phenotypes(list_only=False, dictionary=False, table=False):
-    """Return all phenotypes from the phenotype table.
-
-    :list_only:  Return a simple text list instead of a list of Phenotype
-                 objects.
-    :dictionary: Return a dictionary of phenotype=>ID
-    :table:      Return a pretty table for printing.
-    """
-    s, _ = _db.get_session()
-    q = s.query(t.Phenotype).order_by('phenotype').all()
-    if list_only:
-        return [i.phenotype for i in q]
-    elif dictionary:
-        return {i.phenotype: i.id for i in q}
-    elif table:
-        ids    = [i.id for i in q]
-        phenos = [i.phenotype for i in q]
-        return _tb({'ID': ids, 'Phenotype': phenos}, headers='keys',
-                   tablefmt='grid')
-    else:
-        return q
-
-
-def get_phenotype_categories(list_only=False, dictionary=False, table=False):
-    """Return all phenotype categories from the PhenoCats table.
-
-    :list_only:  Return a simple text list instead of a list of Phenotype
-                 objects.
-    :dictionary: Return a dictionary of phenotype=>ID
-    :table:      Return a pretty table for printing.
-    """
-    s, _ = _db.get_session()
-    q = s.query(t.PhenoCats).order_by('category').all()
-    if list_only:
-        return [i.category for i in q]
-    elif dictionary:
-        return {i.category: i.id for i in q}
-    elif table:
-        ids     = [i.id for i in q]
-        cats    = [i.category for i in q]
-        aliases = [i.alias for i in q]
-        return _tb({'ID': ids, 'Category': cats, 'Alias': aliases},
-                   headers='keys', tablefmt='grid')
-    else:
-        return q
-
-
-def get_populations(list_only=False, dictionary=False, table=False):
-    """Return all phenotypes from the phenotype table.
-
-    :list_only:  Return a simple text list instead of a list of Phenotype
-                 objects.
-    :dictionary: Return a dictionary of population=>ID
-    :table:      Return a pretty table for printing.
-    """
-    s, _ = _db.get_session()
-    q =  s.query(t.Population).all()
-    if list_only:
-        return [i.population for i in q]
-    elif dictionary:
-        return {i.population: i.id for i in q}
-    elif table:
-        ids  = [i.id for i in q]
-        pops = [i.population for i in q]
-        return _tb({'ID': ids, 'Population': pops}, headers='keys',
-                   tablefmt='grid')
-    else:
-        return q
-
-
-def get_population_flags(list_only=False, dictionary=False, table=False):
-    """Return all population flags available in the PopFlags class.
-
-    :list_only:  Return a simple text list instead of a list of Phenotype
-                 objects.
-    :dictionary: Return a dictionary of population=>ID
-    :table:      Return a pretty table for printing.
-    """
-    flags = _ref.PopFlag.__dict__['__members__']
-    if list_only:
-        return [i for i in flags.values()]
-    elif dictionary:
-        return {k: v for k, v in flags.items()}
-    elif table:
-        return _tb(
-            [['FLAG', 'Label']] + [[int(v), k] for k, v in flags.items()],
-            headers='firstrow', tablefmt='grid'
-        )
-    else:
-        return flags
-
-
-def get_study_columns(list_only=False, dictionary=False, table=False):
-    """Return all columns in the Study table.
-
-    :list_only:  Return a simple text list instead of a list of Phenotype
-                 objects.
-    :dictionary: Return a dictionary of population=>ID
-    :table:      Return a pretty table for printing.
-    """
-    cols = t.Study.columns
-    if list_only:
-        return [i[1] for i in cols.values()]
-    elif dictionary:
-        return {k: v[1] for k, v in cols.items()}
-    elif table:
-        return _tb(
-            [['Column', 'Description', 'Type']] +\
-            [[k, v[1], v[0]] for k, v in cols.items()],
-            headers='firstrow', tablefmt='grid'
-        )
-    else:
-        return cols
-
-
-def get_snp_columns(list_only=False, dictionary=False, table=False):
-    """Return all columns in the SNP table.
-
-    :list_only:  Return a simple text list instead of a list of Phenotype
-                 objects.
-    :dictionary: Return a dictionary of population=>ID
-    :table:      Return a pretty table for printing.
-    """
-    cols = t.SNP.columns
-    if list_only:
-        return [i[1] for i in cols.values()]
-    elif dictionary:
-        return {k: v[1] for k, v in cols.items()}
-    elif table:
-        return _tb(
-            [['Column', 'Description', 'Type']] +\
-            [[k, v[1], v[0]] for k, v in cols.items()],
-            headers='firstrow', tablefmt='grid'
-        )
-    else:
-        return cols
 
 
 ###############################################################################
