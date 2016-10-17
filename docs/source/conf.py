@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import os
 import sphinx_rtd_theme
 
 extensions = [
@@ -18,13 +19,12 @@ master_doc = 'index'
 source_suffix = '.rst'
 
 # General information about the project.
-project = 'grasp'
+project   = 'grasp'
 copyright = '2016, Michael Dacre'
-author = 'Michael Dacre'
-
-version = '0.3'
-release = '0.3.0b1'
-language = 'en'
+author    = 'Michael Dacre'
+version   = '0.3'
+release   = '0.3.0b1'
+language  = 'en'
 
 
 # List of patterns, relative to source directory, that match files and
@@ -41,11 +41,16 @@ pygments_style = 'sphinx'
 # If true, keep warnings as "system message" paragraphs in the built documents.
 # keep_warnings = False
 
-html_theme = "sphinx_rtd_theme"
-html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+on_rtd = os.environ.get('READTHEDOCS') == 'True'
+if on_rtd:
+    html_theme = 'default'
+else:
+    #  html_theme = 'alabaster'
+    html_theme = "sphinx_rtd_theme"
+    html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+    #  html_theme = 'nature'
 
-#  html_theme = 'alabaster'
-#  html_static_path = ['_static']
+html_static_path = ['_static']
 
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'graspdoc'

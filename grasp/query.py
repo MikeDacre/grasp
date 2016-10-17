@@ -420,7 +420,7 @@ def get_variant_info(snp_list, fields='dbsnp', pandas=True):
     Args:
         snp_list: A list of SNP objects or SNP rsIDs
         fields:   Choose fields to display from:
-                  `docs.myvariant.info/en/latest/doc/data.html#available-fields`_
+                  `<docs.myvariant.info/en/latest/doc/data.html#available-fields>`_
                   Good choices are 'dbsnp', 'clinvar', or 'gwassnps'
                   Can also use 'grasp' to get a different version of this
                   info.

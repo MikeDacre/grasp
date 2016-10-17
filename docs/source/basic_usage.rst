@@ -1,13 +1,5 @@
-Simple Python GRASP API
-=======================
-
-+---------+-------------------------------------------------+
-| Author  | Michael D Dacre <mike.dacre@gmail.com>          |
-+---------+-------------------------------------------------+
-| License | MIT License, made at Stanford, use as you wish. |
-+---------+-------------------------------------------------+
-| Version | 0.2.0b                                          |
-+---------+-------------------------------------------------+
+Basic Usage
+===========
 
 This module contains a Python 3 API to work with the GRASP database. The
 database must be downloaded and initialized locally. The default is to use an
@@ -32,10 +24,9 @@ For reference information (e.g. column, population, and phenotype lists) see
 For complete API documentation, go to the
 `documentation site <https://mikedacre.github.io/grasp/>`_
 
-.. contents:: **Contents**
 
 Installation
-------------
+-------------
 
 Use the standard installation procedure:
 
@@ -180,8 +171,3 @@ Example Workflow
   # Plot the overlapping SNPs
   snps = q.intersect_overlapping_series(eur_snps_df.pval_median, afr_snps_df.pval_median)
   snps.plot()
-
-ToDo
-----
-
-* Add more functions to grasp script, including lookup by position or range of positions
