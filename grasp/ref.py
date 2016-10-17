@@ -252,6 +252,9 @@ population flags:
 """
 
 TABLE_INFO = """\
+Table Columns
+=============
+
 The two important tables with the majority of the data are Study and SNP. In
 addition, phenotype data is stored in Phenotype and PhenoCats, population data
 is in Population, and platforms are in Platform.
@@ -259,7 +262,7 @@ is in Population, and platforms are in Platform.
 .. contents:: **Contents**
 
 Study
-=====
+-----
 
 To query studies, it is recommended to use the query.get_studies() function.
 
@@ -267,12 +270,12 @@ To query studies, it is recommended to use the query.get_studies() function.
 
 
 SNP
-===
+---
 
 {snp}
 
 Phenotype
-=========
+---------
 
 All available phenotypes are available on the `Phenotypes wiki page
 <https://github.com/MikeDacre/grasp/wiki/Phenotypes>`_
@@ -283,7 +286,7 @@ All available phenotypes are available on the `Phenotypes wiki page
 - snps (link to SNP table)
 
 PhenoCats
-=========
+---------
 
 All phenotype categories are available on the `Phenotype Categories wiki page
 <https://github.com/MikeDacre/grasp/wiki/Phenotype-Categories>`_
@@ -295,7 +298,7 @@ All phenotype categories are available on the `Phenotype Categories wiki page
 - snps (link to SNP table)
 
 Population
-==========
+----------
 
 - id
 - population
@@ -306,7 +309,7 @@ All population entries are available on the `Populations wiki page
 <https://github.com/MikeDacre/grasp/wiki/Populations>`_
 
 Platform
-========
+--------
 
 - id
 - platform

@@ -22,4 +22,6 @@ For table information see the `wiki <https://github.com/MikeDacre/grasp/wiki>`_
    basic_usage
    entry
    library
+   table_columns
+   query_ref
    indices
