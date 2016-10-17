@@ -11,7 +11,7 @@ Primary query functions:
         Take a study list (possibly from `get_studies`) and return a SNP list
         or dataframe.
 
-Helpful addional functions:
+Helpful additional functions:
     `intersecting_phenos()`:
         Return a list of phenotypes or phenotype categories present in all
         queried populations.
@@ -100,14 +100,14 @@ def get_studies(primary_phenotype=None, pheno_cats=None, pheno_cats_alias=None,
 
             pops = _ref.PopFlag.eur | _ref.PopFlag.afr
 
-        In addition you can provide a list of strings correcponding to PopFlag
+        In addition you can provide a list of strings corresponding to PopFlag
         attributes.
 
         Note: the `only_` parameters work as ANDs, not ORs. So
         only_disc_pop='eur|afr' will return those studies that have BOTH
         european and african discovery populations, but no other discovery
         populations. On the other hand, `has_` works as an OR, and will return
-        any study with any of the spefified populations.
+        any study with any of the specified populations.
 
     Args:
         primary_phenotype: Phenotype of interest, string or list of strings.
@@ -260,19 +260,19 @@ def intersecting_phenos(primary_pops=None, pop_flags=None, check='cat',
     """Return a list of phenotypes that are present in all populations.
 
     Can only provide one of primary_pops or pop_flags. pop_flags does a
-    bitwise lookup, primary_pops quries the primary string only.
+    bitwise lookup, primary_pops queries the primary string only.
 
     By default this function returns a list of phenotype categories, if you
     want to check primary phenotypes instead, provide check='primary'.
 
     Args:
-        primary_pops: A string or list of strings corresponing to the
+        primary_pops: A string or list of strings corresponding to the
                       `tables.Study.phenotype` column
         pop_flags:    A `ref.PopFlag` object or list of objects.
         check:        cat/primary either check categories or primary phenos.
         pop_type:     disc/rep Use with pop_flags only, check either
                       discovery or replication populations.
-        exclusive:    Use with pop_flags only, do an excusive rather than
+        exclusive:    Use with pop_flags only, do an exclusive rather than
                       inclusion population search
         list_only:    Return a list of names only, rather than a list of
                       objects
@@ -445,6 +445,45 @@ def lookup_location(chrom, position, study=False, columns=None, pandas=False):
             return q.all()
 
 
+def lookup_studies(title=None, id=None, columns=None, pandas=False):
+    """Find all studies matching either title or id.
+
+    Args:
+        title (str):    The study title, string or list of strings.
+        id (int):       The row ID, usually the PMID, int or list of ints.
+        columns (list): A list of columns to include in the query. Default is
+                        all. List must be made up of column objects, e.g.
+                        [t.SNP.snpid, t.Study.id]
+        pandas (bool):  Return a dataframe instead of a list of SNPs
+
+    Returns:
+        DataFrame or list: All matching studies as either a dataframe or a list
+    """
+    s, e = _db.get_session()
+    if not columns:
+        columns = [t.Study]
+    if not isinstance(columns, (list, tuple)):
+        columns = [columns]
+
+    q = s.query(*columns)
+
+    if title:
+        if not isinstance(title, (tuple, list)):
+            title = [title]
+        q = q.filter(t.Study.title.in_(title))
+
+    if id:
+        if not isinstance(id, (tuple, list)):
+            id = [id]
+            id = [int(id) for i in id]
+        q = q.filter(t.Study.title.in_(id))
+
+    if pandas:
+        return _pd.read_sql(q.statement, e, index_col='id')
+    else:
+        return q.all()
+
+
 ###############################################################################
 #                              MyVariant Queries                              #
 ###############################################################################
@@ -516,9 +555,9 @@ def collapse_dataframe(df, mechanism='median', pvalue_filter=None,
                            'snpid', and 'pval' columns.
         mechanism:         A numpy statistical function to use to collapse the
                            pvalue, median or mean are the common ones.
-        pvalue_filter:     After collapsing the dataframe, filte to only
+        pvalue_filter:     After collapsing the dataframe, filter to only
                            include pvalues less than this cutoff.
-        protected_columns: A list of column names that will be maintened as is,
+        protected_columns: A list of column names that will be maintained as is,
                            although all duplicates will be dropped (randomly).
                            Only makes sense for columns that are identical
                            for all studies of the same SNP.
@@ -619,6 +658,35 @@ def intersect_overlapping_series(series1, series2, names=None,
 ###############################################################################
 #                              Helper Functions                               #
 ###############################################################################
+
+
+def write_study_dict(study_dict, outfile):
+    """Write a study dictionary from `get_studies(dictionary=True)` to file.
+
+    Looks up studies in the Study table first.
+
+    Args:
+        study_dict (dict): A dictionary of title=>id from the Study table.
+        outfile:           A valid path to a file with write permission.
+
+    Outputs:
+        A tab delimited file of ID, Title, Author, Journal, Discovery
+        Population, Replication Population, SNP_Count
+
+    Returns:
+        None
+
+    """
+    _, e = _db.get_session()
+
+    columns = [t.Study.id, t.Study.title, t.Study.author, t.Study.journal,
+               t.Study.sample_size, t.Study.replication_size,
+               t.Study.snp_count]
+
+    studies = lookup_studies(id=[i for i in study_dict.values()],
+                             columns=columns, pandas=True)
+
+    studies.to_csv(outfile, sep='\t')
 
 
 def get_pop_flags(pop_flags):
