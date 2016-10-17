@@ -3,7 +3,6 @@ A mix of functions to make querying the database and analyzing the results
 faster.
 
 Primary query functions:
-
     `get_studies()`:
         Allows querying the Study table by a combination of population and
         phenotype variables.
@@ -13,18 +12,15 @@ Primary query functions:
         or dataframe.
 
 Helpful addional functions:
-
     `intersecting_phenos()`:
         Return a list of phenotypes or phenotype categories present in all
         queried populations.
 
 Lookup functions:
-
     `lookup_rsid()` and `lookup_location()` allow the querying of the database
     for specific SNPs and can return customized information on them.
 
 MyVariant:
-
     `get_variant_info()`:
         Use myvariant to get variant info for a list of SNPs.
 

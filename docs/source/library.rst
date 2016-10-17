@@ -54,10 +54,6 @@ intersect_overlapping_series
 .. autofunction:: grasp.query.intersect_overlapping_series
    :show-inheritance:
  
- 
- 
- 
-
 grasp.tables
 ------------
 
