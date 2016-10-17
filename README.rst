@@ -1,10 +1,6 @@
 Simple Python GRASP API
 =======================
 
-.. image:: https://readthedocs.org/projects/grasp/badge/?version=latest
-
-.. image:: https://img.shields.io/badge/python%20versions-3.4%203.5%203.6-brightgreen.svg
-
 +---------+-------------------------------------------------+
 | Author  | Michael D Dacre <mike.dacre@gmail.com>          |
 +---------+-------------------------------------------------+
@@ -12,6 +8,11 @@ Simple Python GRASP API
 +---------+-------------------------------------------------+
 | Version | 0.2.0b                                          |
 +---------+-------------------------------------------------+
+
+
+.. image:: https://readthedocs.org/projects/grasp/badge/?version=latest
+.. image:: https://img.shields.io/badge/python%20versions-3.4%203.5%203.6-brightgreen.svg
+
 
 This module contains a Python 3 API to work with the GRASP database. The
 database must be downloaded and initialized locally. The default is to use an
