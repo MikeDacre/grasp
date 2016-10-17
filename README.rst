@@ -1,7 +1,7 @@
 Simple Python GRASP API
 =======================
 
-.. image:: http://grasp.readthedocs.io/en/latest/?badge=latest
+.. image:: https://readthedocs.org/projects/grasp/badge/?version=latest
 
 .. image:: https://img.shields.io/badge/python%20versions-3.4%203.5%203.6-brightgreen.svg
 
