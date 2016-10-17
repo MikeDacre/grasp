@@ -1,27 +1,23 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """
 A Simple GRASP (grasp.nhlbi.nih.gov) API based on SQLAlchemy and Pandas
 
-===============================================================================
+============   ======================================
+Author         Michael D Dacre <mike.dacre@gmail.com>
+Organization   Stanford University
+License        MIT License, use as you wish
+Created        2016-10-08
+Version        0.3.0b1
+============   ======================================
 
-        AUTHOR: Michael D Dacre, mike.dacre@gmail.com
-  ORGANIZATION: Stanford University
-       LICENSE: MIT License, property of Stanford, use as you wish
-       CREATED: 2016-11-08
- Last modified: 2016-10-16 15:17
+ Last modified: 2016-10-17 00:18
 
-   DESCRIPTION: This is the front-end to a python grasp api, intended to allow
-                easy database creation and simple querying.
-                For most of the functions of this module, you will need to
-                call the module directly.
-
-===============================================================================
+This is the front-end to a python grasp api, intended to allow easy database
+creation and simple querying.  For most of the functions of this module, you
+will need to call the module directly.
 """
 import os
 import sys
 import argparse
-
 from textwrap import dedent
 
 import pandas as pd
@@ -32,119 +28,22 @@ from grasp import query
 from grasp import config
 from grasp import tables as t
 
-
-###############################################################################
-#                            RST File Definitions                             #
-###############################################################################
-
-PHENO_CATS = """\
-The following 179 phenotype categories can be searched by alias or category:
-
-{}
-"""
-
-PHENOS = """\
-The following phenotypes are stored in the GRASP database (there are 1,209 of
-them):
-
-{}
-"""
-
-POPS = """\
-The following populations are available in the Population table:
-
-{}
-"""
-
-FLAGS = """\
-The Population table only contains summary level population information, each
-study also has counts of discovery and replication populations. To query
-studies that only contain certain populations, this module uses bitwise flags.
-To make these easier to use, we use the `py-flags
-<https://pypi.python.org/pypi/py-flags>`_ package, and map the following
-population flags:
-
-{}
-"""
-
-TABLE_INFO = """\
-The two important tables with the majority of the data are Study and SNP. In
-addition, phenotype data is stored in Phenotype and PhenoCats, population data
-is in Population, and platforms are in Platform.
-
-.. contents:: **Contents**
-
-Study
-=====
-
-To query studies, it is recommended to use the query.get_studies() function.
-
-{study}
+from grasp.ref import PHENO_CATS, PHENOS, POPS, FLAGS, TABLE_INFO
 
 
-SNP
-===
+def command_line_parser():
+    """Parse command line options.
 
-{snp}
-
-Phenotype
-=========
-
-All available phenotypes are available on the `Phenotypes wiki page
-<https://github.com/MikeDacre/grasp/wiki/Phenotypes>`_
-
-- id
-- phenotype
-- studies (link to Study table)
-- snps (link to SNP table)
-
-PhenoCats
-=========
-
-All phenotype categories are available on the `Phenotype Categories wiki page
-<https://github.com/MikeDacre/grasp/wiki/Phenotype-Categories>`_
-
-- id
-- population
-- alias
-- studies (link to Study table)
-- snps (link to SNP table)
-
-Population
-==========
-
-- id
-- population
-- studies (link to Study table)
-- snps (link to SNP table)
-
-All population entries are available on the `Populations wiki page
-<https://github.com/MikeDacre/grasp/wiki/Populations>`_
-
-Platform
-========
-
-- id
-- platform
-- studies (link to Study table)
-- snps (link to SNP table)
-"""
-
-###############################################################################
-#                            Command Line Running                             #
-###############################################################################
-
-
-def main(argv=None):
-    """Parse command line options to run as a script."""
-    if not argv:
-        argv = sys.argv[1:]
+    Returns:
+        argparse parser
+    """
 
     parser  = argparse.ArgumentParser(
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
 
-    subparsers = parser.add_subparsers(dest='modes')
+    subparsers = parser.add_subparsers(dest='modes',
+                                       metavar='{search,conf,info,init}')
 
     # Search database
     search_info = dedent(
@@ -241,6 +140,16 @@ def main(argv=None):
     init.add_argument('-n', '--no-progress', action='store_false',
                       help="Do not display a progress bar")
 
+    return parser
+
+
+def main(argv=None):
+    """Parse command line options to run as a script."""
+    if not argv:
+        argv = sys.argv[1:]
+
+    parser = command_line_parser()
+
     args = parser.parse_args(argv)
 
     if args.modes == 'init':
@@ -326,8 +235,8 @@ def main(argv=None):
             command = 'display' if args.display == 'study' \
                 or args.display == 'snp' else 'get'
             with db._open_zipped(out, 'w') as fout:
-                fout.write(eval('{}_{}(table=True)'.format(command,
-                                                           args.display)))
+                fout.write(eval('info.{}_{}(table=True)'.format(command,
+                                                                args.display)))
 
     elif args.modes == 'config':
         if args.cdb:
@@ -356,9 +265,9 @@ def main(argv=None):
             config.write_config()
 
         else:
-            conf.print_help()
+            parser.conf.print_help()
     else:
         parser.print_help()
 
-if __name__ == '__main__' and '__file__' in globals():
+if __name__ == '__main__':
     sys.exit(main())

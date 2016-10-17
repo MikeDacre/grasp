@@ -159,8 +159,8 @@ def get_studies(primary_phenotype=None, pheno_cats=None, pheno_cats_alias=None,
     elif only_disc_pop:
         pop_flags = get_pop_flags(only_disc_pop)
         q = q.filter(
-            t.Study.disc_pop_flag.op('&')(
-                int(pop_flags)) == int(pop_flags))
+            t.Study.disc_pop_flag.is_(int(pop_flags))
+        )
 
     if has_rep_pop:
         pop_flags = get_pop_flags(has_rep_pop)
@@ -168,8 +168,8 @@ def get_studies(primary_phenotype=None, pheno_cats=None, pheno_cats_alias=None,
     elif only_rep_pop:
         pop_flags = get_pop_flags(only_rep_pop)
         q = q.filter(
-            t.Study.disc_pop_flag.op('&')(
-                int(pop_flags)) == int(pop_flags))
+            t.Study.disc_pop_flag.is_(int(pop_flags))
+        )
 
     # Query is built, now we decide how to return it.
     if query:
@@ -207,8 +207,8 @@ def get_snps(studies, pandas=True):
             dfs.append(_pd.read_sql(
                 s.query(
                     t.SNP.id, t.SNP.chrom, t.SNP.pos, t.SNP.snpid,
-                    t.SNP.study_snpid, t.SNP.pval, t.SNP.study_id, t.SNP.InGene,
-                    t.SNP.InMiRNA, t.SNP.InLincRNA, t.SNP.LSSNP,
+                    t.SNP.study_snpid, t.SNP.pval, t.SNP.study_id,
+                    t.SNP.InGene, t.SNP.InMiRNA, t.SNP.InLincRNA, t.SNP.LSSNP,
                     t.SNP.phenotype_desc
                 ).filter(
                     t.SNP.study_id.in_(small_studies)

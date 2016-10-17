@@ -48,7 +48,9 @@ help:
 
 .PHONY: clean
 clean:
-	rm -rf $(BUILDDIR)/*
+	rm -rf $(BUILDDIR)/doctrees
+	rm -rf $(PDFBUILDDIR)/latex
+	rm $(PDF)
 
 .PHONY: html
 html:
