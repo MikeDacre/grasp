@@ -6,8 +6,26 @@ used in an interactive python session (e.g. with jupyter) alongside pandas.
 Many of the query functions in this library returns pandas dataframes.
 
 Below is a complete documentation of the API for this library. The functions in
-query will be the most interesting for most users.
+`grasp.query` will be the most interesting for most users wanting to do common
+db queries.
 
+Tables are defined in `grasp.tables`, functions for connecting to and building
+the database are in `grasp.db`. `grasp.info` contains simple documentation for
+all of the tables and phenotypes (used to build this documentation).
+
+`grasp.config` handles the static database configuration at `~/.grasp`, and
+`grasp.ref` is used to define module wide static objects, like dictionaries
+and the `PopFlags` class.
+
+
+grasp.query
+-----------
+
+.. automodule:: grasp.query
+    :members:
+    :undoc-members:
+    :show-inheritance:
+ 
 grasp.tables
 ------------
 
@@ -25,14 +43,7 @@ grasp.db
     :undoc-members:
     :show-inheritance:
 
-grasp.query
------------
 
-.. automodule:: grasp.query
-    :members:
-    :undoc-members:
-    :show-inheritance:
- 
 grasp.config
 ------------
 

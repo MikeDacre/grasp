@@ -1,6 +1,35 @@
 """
 A mix of functions to make querying the database and analyzing the results
 faster.
+
+Primary query functions:
+
+    `get_studies()`: Allows querying the Study table by a combination of
+                     population and phenotype variables.
+    `get_snps()`:    Take a study list (possibly from `get_studies`) and return
+                     a SNP list or dataframe.
+
+Helpful addional functions:
+    `intersecting_phenos()`: Return a list of phenotypes or phenotype
+                             categories present in all queried populations.
+
+Lookup functions:
+    `lookup_rsid()` and `lookup_location()` allow the querying of the database
+    for specific SNPs and can return customized information on them.
+
+MyVariant:
+    `get_variant_info()`: Use myvariant to get variant info for a list of SNPs.
+
+DataFrame Manipulation:
+    `collapse_dataframe()`:           Collapse a dataframe (such as that
+                                      returned by `get_snps()`) to include only
+                                      a single entry per SNP (collapsing
+                                      multiple studies into one).
+    `intersect_overlapping_series()`: Merge two sets of pvalues (such as those
+                                      from `collapse_dataframe()`) into a
+                                      single merged dataframe with the original
+                                      index and one column for each pvalue.
+                                      Good for plotting.
 """
 from time import sleep as _sleep
 
@@ -223,6 +252,91 @@ def get_snps(studies, pandas=True):
         return snps
 
 
+def intersecting_phenos(primary_pops=None, pop_flags=None, check='cat',
+                        pop_type='disc', exclusive=False, list_only=False):
+    """Return a list of phenotypes that are present in all populations.
+
+    Can only provide one of primary_pops or pop_flags. pop_flags does a
+    bitwise lookup, primary_pops quries the primary string only.
+
+    By default this function returns a list of phenotype categories, if you
+    want to check primary phenotypes instead, provide check='primary'.
+
+    Args:
+        primary_pops: A string or list of strings corresponing to the
+                      `tables.Study.phenotype` column
+        pop_flags:    A `ref.PopFlag` object or list of objects.
+        check:        cat/primary either check categories or primary phenos.
+        pop_type:     disc/rep Use with pop_flags only, check either
+                      discovery or replication populations.
+        exclusive:    Use with pop_flags only, do an excusive rather than
+                      inclusion population search
+        list_only:    Return a list of names only, rather than a list of
+                      objects
+
+    Returns:
+        A list of `table.Phenotype` or `table.PhenoCat` objects, or a list of
+        names if `list_only` is specified.
+
+    """
+    # Check arguments
+    if primary_pops and pop_flags:
+        raise KeywordError("Cannot specify both 'primary_pops' and " +
+                           "'pop_flags'")
+    if not primary_pops and not pop_flags:
+        raise KeywordError("Must provide at least one of 'primary_pops' or " +
+                           "'pop_flags'")
+    if check not in ['cat', 'primary']:
+        raise KeywordError("'check' must be one of ['cat', 'primary']")
+
+    # Pick query type
+    if pop_flags:
+        if pop_type not in ['disc', 'rep']:
+            raise KeywordError("'pop_type' must be one of ['disc', 'rep']")
+        l = 'only' if exclusive else 'has'
+        key = '{}_{}_pop'.format(l, pop_type)
+        qpops = [get_pop_flags(i) for i in pop_flags]
+    else:
+        key = 'primary_pop'
+        qpops = primary_pops
+
+    # Check that we have an iterable
+    if not isinstance(qpops, (list, tuple)):
+        raise KeywordError('Population query must be a list or tuple')
+
+    # Get phenotype lists and intersect to form a final set
+    # We use IDs here because it makes the set intersection more robust
+    final_set = set()
+    for pop in qpops:
+        p = []
+        for i in get_studies(**{key: pop}):
+            p += i.phenotype_cats if check == 'cat' else i.phenotype
+        out = set([i.id for i in p])
+        if not final_set:
+            final_set  = out
+        else:
+            final_set &= out
+
+    # Get the final phenotype list
+    s, _ = _db.get_session()
+    phenos = []
+    for id_list in _chunks(list(final_set), 999):
+        table = t.Phenotype if primary_pops else t.PhenoCats
+        phenos += s.query(table).filter(table.id.in_(id_list)).all()
+
+    # Return the list
+    if list_only:
+        return [i.category for i in phenos] if check == 'cat' \
+            else [i.phenotype for i in phenos]
+    else:
+        return phenos
+
+
+###############################################################################
+#                              Lookup Functions                               #
+###############################################################################
+
+
 def lookup_rsid(rsid, study=False, columns=None, pandas=False):
     """Query database by rsID.
 
@@ -326,87 +440,6 @@ def lookup_location(chrom, position, study=False, columns=None, pandas=False):
             return q.first()
         else:
             return q.all()
-
-
-def find_intersecting_phenotypes(primary_pops=None, pop_flags=None,
-                                 check='cat', pop_type='disc',
-                                 exclusive=False, list_only=False):
-    """Return a list of phenotypes that are present in all populations.
-
-    Can only provide one of primary_pops or pop_flags. pop_flags does a
-    bitwise lookup, primary_pops quries the primary string only.
-
-    By default this function returns a list of phenotype categories, if you
-    want to check primary phenotypes instead, provide check='primary'.
-
-    Args:
-        primary_pops: A string or list of strings corresponing to the
-                      `tables.Study.phenotype` column
-        pop_flags:    A `ref.PopFlag` object or list of objects.
-        check:        cat/primary either check categories or primary phenos.
-        pop_type:     disc/rep Use with pop_flags only, check either
-                      discovery or replication populations.
-        exclusive:    Use with pop_flags only, do an excusive rather than
-                      inclusion population search
-        list_only:    Return a list of names only, rather than a list of
-                      objects
-
-    Returns:
-        A list of `table.Phenotype` or `table.PhenoCat` objects, or a list of
-        names if `list_only` is specified.
-
-    """
-    # Check arguments
-    if primary_pops and pop_flags:
-        raise KeywordError("Cannot specify both 'primary_pops' and " +
-                           "'pop_flags'")
-    if not primary_pops and not pop_flags:
-        raise KeywordError("Must provide at least one of 'primary_pops' or " +
-                           "'pop_flags'")
-    if check not in ['cat', 'primary']:
-        raise KeywordError("'check' must be one of ['cat', 'primary']")
-
-    # Pick query type
-    if pop_flags:
-        if pop_type not in ['disc', 'rep']:
-            raise KeywordError("'pop_type' must be one of ['disc', 'rep']")
-        l = 'only' if exclusive else 'has'
-        key = '{}_{}_pop'.format(l, pop_type)
-        qpops = [get_pop_flags(i) for i in pop_flags]
-    else:
-        key = 'primary_pop'
-        qpops = primary_pops
-
-    # Check that we have an iterable
-    if not isinstance(qpops, (list, tuple)):
-        raise KeywordError('Population query must be a list or tuple')
-
-    # Get phenotype lists and intersect to form a final set
-    # We use IDs here because it makes the set intersection more robust
-    final_set = set()
-    for pop in qpops:
-        p = []
-        for i in get_studies(**{key: pop}):
-            p += i.phenotype_cats if check == 'cat' else i.phenotype
-        out = set([i.id for i in p])
-        if not final_set:
-            final_set  = out
-        else:
-            final_set &= out
-
-    # Get the final phenotype list
-    s, _ = _db.get_session()
-    phenos = []
-    for id_list in _chunks(list(final_set), 999):
-        table = t.Phenotype if primary_pops else t.PhenoCats
-        phenos += s.query(table).filter(table.id.in_(id_list)).all()
-
-    # Return the list
-    if list_only:
-        return [i.category for i in phenos] if check == 'cat' \
-            else [i.phenotype for i in phenos]
-    else:
-        return phenos
 
 
 ###############################################################################

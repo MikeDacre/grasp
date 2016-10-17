@@ -17,7 +17,7 @@ For an introduction see the `github readme <https://github.com/MikeDacre/grasp>`
 For table information see the `wiki <https://github.com/MikeDacre/grasp/wiki>`_
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    
    basic_usage
    entry
