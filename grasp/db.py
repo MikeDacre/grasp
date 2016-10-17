@@ -42,6 +42,7 @@ from .config import config as _config
 # Reference objects
 from .ref import PopFlag as _PopFlag
 from .ref import pheno_synonyms
+from .ref import pop_correction
 
 __all__ = ["get_session", "initialize_database"]
 
@@ -206,6 +207,10 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
             # Get population description
             try:
                 pop = f[19].strip()
+                try:
+                    pop = pop_correction[pop]
+                except KeyError:
+                    pass
                 if pop not in populations:
                     pop_records.append({'id':         pop_id,
                                         'population': pop})

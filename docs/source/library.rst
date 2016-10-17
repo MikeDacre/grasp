@@ -28,26 +28,34 @@ get_studies
 ...........
 
 .. autofunction:: grasp.query.get_studies
+   :show-inheritance:
 
 get_snps
 ........
 
 .. autofunction:: grasp.query.get_snps
+   :show-inheritance:
 
 get_variant_info
 ................
 
 .. autofunction:: grasp.query.get_variant_info
+   :show-inheritance:
  
 get_collapse_dataframe
 ......................
 
 .. autofunction:: grasp.query.collapse_dataframe
+   :show-inheritance:
 
 intersect_overlapping_series
 ............................
 
 .. autofunction:: grasp.query.intersect_overlapping_series
+   :show-inheritance:
+ 
+ 
+ 
  
 
 grasp.tables

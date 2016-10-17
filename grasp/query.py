@@ -271,7 +271,7 @@ def intersecting_phenos(primary_pops=None, pop_flags=None, check='cat',
 
     Args:
         primary_pops: A string or list of strings corresponing to the
-                      `tables.Population.population` column
+                      `tables.Study.phenotype` column
         pop_flags:    A `ref.PopFlag` object or list of objects.
         check:        cat/primary either check categories or primary phenos.
         pop_type:     disc/rep Use with pop_flags only, check either
