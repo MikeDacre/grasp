@@ -636,7 +636,7 @@ def get_pop_flags(pop_flags):
         if isinstance(pflag, int):
             pflag = _ref.PopFlag(pflag)
         elif isinstance(pflag, str):
-            pflag = _ref.PopFlag.from_simple_str(pflag)
+            pflag = _ref.PopFlag().from_simple_str(pflag)
         if isinstance(pflag, _ref.PopFlag):
             final_flag |= pflag
         else:
