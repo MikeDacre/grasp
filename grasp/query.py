@@ -4,32 +4,39 @@ faster.
 
 Primary query functions:
 
-    `get_studies()`: Allows querying the Study table by a combination of
-                     population and phenotype variables.
-    `get_snps()`:    Take a study list (possibly from `get_studies`) and return
-                     a SNP list or dataframe.
+    `get_studies()`:
+        Allows querying the Study table by a combination of population and
+        phenotype variables.
+
+    `get_snps()`:
+        Take a study list (possibly from `get_studies`) and return a SNP list
+        or dataframe.
 
 Helpful addional functions:
-    `intersecting_phenos()`: Return a list of phenotypes or phenotype
-                             categories present in all queried populations.
+
+    `intersecting_phenos()`:
+        Return a list of phenotypes or phenotype categories present in all
+        queried populations.
 
 Lookup functions:
+
     `lookup_rsid()` and `lookup_location()` allow the querying of the database
     for specific SNPs and can return customized information on them.
 
 MyVariant:
-    `get_variant_info()`: Use myvariant to get variant info for a list of SNPs.
+
+    `get_variant_info()`:
+        Use myvariant to get variant info for a list of SNPs.
 
 DataFrame Manipulation:
-    `collapse_dataframe()`:           Collapse a dataframe (such as that
-                                      returned by `get_snps()`) to include only
-                                      a single entry per SNP (collapsing
-                                      multiple studies into one).
-    `intersect_overlapping_series()`: Merge two sets of pvalues (such as those
-                                      from `collapse_dataframe()`) into a
-                                      single merged dataframe with the original
-                                      index and one column for each pvalue.
-                                      Good for plotting.
+    `collapse_dataframe()`:
+        Collapse a dataframe (such as that returned by `get_snps()`) to include
+        only a single entry per SNP (collapsing multiple studies into one).
+
+    `intersect_overlapping_series()`:
+        Merge two sets of pvalues (such as those from `collapse_dataframe()`)
+        into a single merged dataframe with the original index and one column
+        for each pvalue.  Good for plotting.
 """
 from time import sleep as _sleep
 
