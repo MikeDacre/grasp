@@ -94,20 +94,22 @@ class SNP(Base):
     HUPfield           = _Column(_String)
     LastCurationDate   = _Column(_Date)
     CreationDate       = _Column(_Date)
-    population_id      = _Column(_Integer, _ForeignKey('populations.id'))
+    population_id      = _Column(_Integer, _ForeignKey('populations.id'),
+                                 index=True)
     population         = _relationship("Population",
                                        backref="snps")
-    study_id           = _Column(_Integer, _ForeignKey('studies.id'))
+    study_id           = _Column(_Integer, _ForeignKey('studies.id'),
+                                 index=True)
     study              = _relationship("Study",
                                        back_populates="snps")
-    study_snpid        = _Column(_String)
+    study_snpid        = _Column(_String, index=True)
     paper_loc          = _Column(_String)
     phenotype_desc     = _Column(_String, index=True)
     phenotype_cats     = _relationship("PhenoCats",
                                        secondary=snp_pheno_assoc,
                                        back_populates="snps")
-    InGene             = _Column(_String)
-    NearestGene        = _Column(_String)
+    InGene             = _Column(_String, index=True)
+    NearestGene        = _Column(_String, index=True)
     InLincRNA          = _Column(_String)
     InMiRNA            = _Column(_String)
     InMiRNABS          = _Column(_String)
@@ -129,7 +131,7 @@ class SNP(Base):
     _Index('chrom_pos', 'chrom', 'pos')
 
     columns = _od([
-        ('id',                 ('BigInteger',   'ID') ),
+        ('id',                 ('BigInteger',   'NHLBIkey') ),
         ('snpid',              ('String',       'SNPid') ),
         ('chrom',              ('String',       'chr') ),
         ('pos',                ('Integer',      'pos') ),
@@ -171,15 +173,15 @@ class SNP(Base):
     @property
     def snp_loc(self):
         """Return a simple string containing the SNP location."""
-        return "{}:{}".format(self.chrom, self.pos)
+        return "chr{}:{}".format(self.chrom, self.pos)
 
     @property
     def hvgs_ids(self):
         """The HVGS ID from myvariant."""
         if not hasattr(self, '_hvgs_ids'):
             mv = myvariant.MyVariantInfo()
-            q = mv.query(self.snp_loc, fields='id', as_dataframe=True)
-            self._hvgs_ids = q['hits'].tolist()
+            self._hvgs_ids = [i['_id'] for i in
+                              mv.query(self.snp_loc, fields='id')['hits']]
         return self._hvgs_ids
 
     def get_variant_info(self, fields="dbsnp", pandas=True):
@@ -340,7 +342,8 @@ class Study(Base):
                                      back_populates="studies")
     snp_count        = _Column(_String)
     imputed          = _Column(_Boolean)
-    population_id    = _Column(_Integer, _ForeignKey('populations.id'))
+    population_id    = _Column(_Integer, _ForeignKey('populations.id'),
+                               index=True)
     population       = _relationship("Population",
                                      backref="studies")
     total            = _Column(_Integer)

@@ -20,11 +20,6 @@ here = os.path.abspath(os.path.dirname(__file__))
 with codecs.open(os.path.join(here, 'README.rst'), encoding='utf-8') as f:
     long_description = f.read()
 
-# Generate a list of python scripts
-scpts = []
-scpt_dir = os.listdir(os.path.join(here, 'bin'))
-for scpt in scpt_dir:
-    scpts.append(os.path.join('bin', scpt))
 
 # Initialize the config on install
 class CustomInstall(install):
@@ -40,7 +35,7 @@ class CustomInstall(install):
 
 setup(
     name='grasp',
-    version='0.2.0b',
+    version='0.3.0b1',
     description='A Simple GRASP (grasp.nhlbi.nih.gov) API based on SQLAlchemy and Pandas',
     long_description=long_description,
     url='https://github.com/MikeDacre/grasp',
@@ -68,8 +63,12 @@ setup(
     keywords='grasp sqlalchemy',
 
     install_requires=['sqlalchemy', 'pandas', 'tqdm', 'python-dateutil',
-                      'pyflags', 'myvariant'],
+                      'pyflags', 'myvariant', 'tabulate'],
     packages=['grasp'],
-    scripts=scpts,
+    entry_points={
+        'console_scripts': [
+                'grasp = grasp.__main__:main',
+        ]
+    },
     cmdclass={'install': CustomInstall},
 )

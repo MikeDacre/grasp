@@ -2,6 +2,8 @@
 A mix of functions to make querying the database and analyzing the results
 faster.
 """
+from time import sleep as _sleep
+
 import pandas as _pd
 import myvariant as _mv
 
@@ -157,8 +159,8 @@ def get_studies(primary_phenotype=None, pheno_cats=None, pheno_cats_alias=None,
     elif only_disc_pop:
         pop_flags = get_pop_flags(only_disc_pop)
         q = q.filter(
-            t.Study.disc_pop_flag.op('&')(
-                int(pop_flags)) == int(pop_flags))
+            t.Study.disc_pop_flag.is_(int(pop_flags))
+        )
 
     if has_rep_pop:
         pop_flags = get_pop_flags(has_rep_pop)
@@ -166,8 +168,8 @@ def get_studies(primary_phenotype=None, pheno_cats=None, pheno_cats_alias=None,
     elif only_rep_pop:
         pop_flags = get_pop_flags(only_rep_pop)
         q = q.filter(
-            t.Study.disc_pop_flag.op('&')(
-                int(pop_flags)) == int(pop_flags))
+            t.Study.disc_pop_flag.is_(int(pop_flags))
+        )
 
     # Query is built, now we decide how to return it.
     if query:
@@ -205,8 +207,8 @@ def get_snps(studies, pandas=True):
             dfs.append(_pd.read_sql(
                 s.query(
                     t.SNP.id, t.SNP.chrom, t.SNP.pos, t.SNP.snpid,
-                    t.SNP.study_snpid, t.SNP.pval, t.SNP.study_id, t.SNP.InGene,
-                    t.SNP.InMiRNA, t.SNP.InLincRNA, t.SNP.LSSNP,
+                    t.SNP.study_snpid, t.SNP.pval, t.SNP.study_id,
+                    t.SNP.InGene, t.SNP.InMiRNA, t.SNP.InLincRNA, t.SNP.LSSNP,
                     t.SNP.phenotype_desc
                 ).filter(
                     t.SNP.study_id.in_(small_studies)
@@ -219,6 +221,111 @@ def get_snps(studies, pandas=True):
                 t.SNP.study_id.in_(small_studies)
             ).all()
         return snps
+
+
+def lookup_rsid(rsid, study=False, columns=None, pandas=False):
+    """Query database by rsID.
+
+    Args:
+        rsID (str):     An rsID or list of rsIDs
+        study (bool):   Include study info in the output.
+        columns (list): A list of columns to include in the query. Default is
+                        all. List must be made up of column objects, e.g.
+                        [t.SNP.snpid, t.Study.id]
+        pandas (bool):  Return a dataframe instead of a list of SNPs
+
+    Returns:
+        list: List of SNP objects
+    """
+    s, e = _db.get_session()
+    if not columns:
+        columns = [t.SNP, t.Study] if study else [t.SNP]
+
+    q = s.query(*columns)
+    if study:
+        q = q.filter(
+            t.SNP.study_id == t.Study.id
+        )
+
+    if isinstance(rsid, str):
+        q = q.filter(t.SNP.study_snpid == rsid)
+    elif isinstance(rsid, (list, tuple)):
+        q = q.filter(t.SNP.study_snpid.in_(rsid))
+    else:
+        raise ValueError('rsid must be either list or string')
+
+    if pandas:
+        return _pd.read_sql(q.statement, e, index_col='study_snpid')
+    else:
+        if isinstance(rsid, str):
+            return q.first()
+        else:
+            return q.all()
+
+
+def lookup_location(chrom, position, study=False, columns=None, pandas=False):
+    """Query database by location.
+
+    Args:
+        chrom (str):    The chromosome as an int or string (e.g. 1 or chr1)
+        position (int): Either one location, a list of locations, or a range
+                        of locations, range can be expressed as a tuple of two
+                        ints, a range object, or a string of 'int-int'
+        study (bool):   Include study info in the output.
+        columns (list): A list of columns to include in the query. Default is
+                        all. List must be made up of column objects, e.g.
+                        [t.SNP.snpid, t.Study.id]
+        pandas (bool):  Return a dataframe instead of a list of SNPs
+
+    Returns:
+        list: List of SNP objects
+    """
+    s, e = _db.get_session()
+    if isinstance(chrom, str) and chrom.startswith('chr'):
+        chrom = chrom[3:]
+    chrom = str(chrom)
+
+    if not columns:
+        columns = [t.SNP, t.Study] if study else [t.SNP]
+
+    if study:
+        q = s.query(*columns).filter(
+            t.SNP.chrom == chrom
+        ).filter(
+            t.SNP.study_id == t.Study.id
+        )
+    else:
+        q = s.query(*columns).filter(
+            t.SNP.chrom == chrom
+        )
+
+    if isinstance(position, int):
+        q = q.filter(t.SNP.pos == position)
+    elif isinstance(position, list):
+        q = q.filter(t.SNP.pos.in_(position))
+    elif isinstance(position, str):
+        if position.isdigit():
+            q = q.filter(t.SNP.pos == int(position))
+        else:
+            start, end = position.split('-')
+            q = q.filter(t.SNP.pos.between(int(start), int(end)))
+    elif isinstance(position, range):
+        print(position.start, position.stop)
+        q = q.filter(t.SNP.pos.between(position.start, position.stop))
+    elif isinstance(position, tuple):
+        assert len(position) == 2
+        q = q.filter(t.SNP.pos.between(int(position[0]), int(position[1])))
+    else:
+        raise ValueError("'position' must be an int, str, range, list, or " +
+                         "tuple. Is {}".format(type(position)))
+
+    if pandas:
+        return _pd.read_sql(q.statement, e, index_col='study_snpid')
+    else:
+        if isinstance(position, int):
+            return q.first()
+        else:
+            return q.all()
 
 
 def find_intersecting_phenotypes(primary_pops=None, pop_flags=None,
@@ -303,6 +410,52 @@ def find_intersecting_phenotypes(primary_pops=None, pop_flags=None,
 
 
 ###############################################################################
+#                              MyVariant Queries                              #
+###############################################################################
+
+
+def get_variant_info(snp_list, fields='dbsnp', pandas=True):
+    """Get variant info for a list of SNPs.
+
+    Args:
+        snp_list: A list of SNP objects or SNP rsIDs
+        fields:   Choose fields to display from:
+                  `docs.myvariant.info/en/latest/doc/data.html#available-fields`_
+                  Good choices are 'dbsnp', 'clinvar', or 'gwassnps'
+                  Can also use 'grasp' to get a different version of this
+                  info.
+        pandas:   Return a dataframe instead of dictionary.
+
+    Returns:
+        A dictionary or a dataframe.
+    """
+    mv = _mv.MyVariantInfo()
+    if isinstance(snp_list, _pd.DataFrame):
+        try:
+            snps = list(snp_list.study_snpid)
+        except AttributeError:
+            snps = list(snp_list.index)
+    elif isinstance(snp_list[0], t.SNP):
+        snps = [i.study_snpid for i in snp_list]
+    else:
+        snps = snp_list
+    assert isinstance(snps, (list, tuple))
+    dfs = []
+    for q in _chunks(snps, 999):
+        dfs.append(mv.querymany(q, scopes='dbsnp.rsid', fields=fields,
+                                as_dataframe=pandas, df_index=True))
+        if len(snps) > 999:
+            _sleep(2)
+    if pandas:
+        return _pd.concat(dfs)
+    else:
+        if len(dfs) > 1:
+            return dfs
+        else:
+            return dfs[0]
+
+
+###############################################################################
 #                           DataFrame Manipulations                           #
 ###############################################################################
 
@@ -312,7 +465,7 @@ def collapse_dataframe(df, mechanism='median', pvalue_filter=None,
     """Collapse a dataframe by chrom:location from get_snps.
 
     Will use the mechanism defined by 'mechanism' to collapse a dataframe
-    to one indexed by 'chrom:loc' with pvalue and count only.
+    to one indexed by 'chrom:location' with pvalue and count only.
 
     This function is agnostic to all dataframe columns other than::
 
@@ -345,34 +498,34 @@ def collapse_dataframe(df, mechanism='median', pvalue_filter=None,
     df = df.sort_values(['chrom', 'pos'])
 
     # Add the location column, which will become the index
-    df['loc'] = df.apply(_create_loc, axis=1)
+    df['location'] = df.apply(_create_loc, axis=1)
 
     # Move all of the columns we want to maintain to a separate df and drop
     # dups
     if protected_columns:
         prot_cols = []
         for i in protected_columns:
-            if i not in ['loc', 'snpid', 'chrom', 'pos', 'pval']:
+            if i not in ['location', 'snpid', 'chrom', 'pos', 'pval']:
                 prot_cols.append(i)
         df_prot = df[prot_cols]
-        df_prot = df_prot.drop_duplicates('loc')
-        df_prot.set_index('loc', inplace=True)
+        df_prot = df_prot.drop_duplicates('location')
+        df_prot.set_index('location', inplace=True)
         df.drop(prot_cols, axis=1, inplace=True)
 
-    # Protect SNPID, chrom, and loc
-    df_snp = df[['loc', 'snpid', 'chrom', 'pos']]
-    df_snp = df_snp.drop_duplicates('loc')
-    df_snp.set_index('loc', inplace=True)
+    # Protect SNPID, chrom, and location
+    df_snp = df[['location', 'snpid', 'chrom', 'pos']]
+    df_snp = df_snp.drop_duplicates('location')
+    df_snp.set_index('location', inplace=True)
     df.drop(['snpid', 'chrom', 'pos'], axis=1, inplace=True)
 
     # Flatten the pvalue
-    df_p = df[['loc', 'pval']]
+    df_p = df[['location', 'pval']]
     df.drop('pval', axis=1, inplace=True)
-    df_p = df_p.groupby('loc').aggregate([mechanism, 'std', 'count'])
+    df_p = df_p.groupby('location').aggregate([mechanism, 'std', 'count'])
     df_p.columns = ['pval', 'std', 'count']
 
     # Flatten the remainder
-    df = df.groupby('loc').aggregate(_aggregate_strings)
+    df = df.groupby('location').aggregate(_aggregate_strings)
 
     # Recombine
     comb_list = [df_snp, df_p, df]
@@ -464,30 +617,6 @@ def _create_loc(x):
 def _chunks(l, n):
     n = max(1, n)
     return (l[i:i+n] for i in range(0, len(l), n))
-
-
-###############################################################################
-#                      Use MyVariant to get Variant Info                      #
-###############################################################################
-
-
-def get_variant_info(snp_list, fields="dbsnp", pandas=True):
-    """Use the myvariant API to get info about this SNP.
-
-    Note that this service can be very slow.
-
-    :snp_list: A list of SNP objects or 'chr:loc'
-    :fields:   Choose fields to display from:
-                  `<docs.myvariant.info/en/latest/doc/data.html#available-fields>`_
-                  Good choices are 'dbsnp', 'clinvar', or 'gwassnps'
-                  Can also use 'grasp' to get a different version of this info.
-    :pandas:   Return a dataframe instead of dictionary.
-    """
-    mv = _mv.MyVariantInfo()
-    if isinstance(snp_list[0], t.SNP):
-        snp_list = [i.snp_loc for i in snp_list]
-    return mv.querymany(snp_list, fields=fields, as_dataframe=pandas,
-                        df_index=True)
 
 
 ###############################################################################

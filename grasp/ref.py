@@ -216,3 +216,100 @@ pheno_synonyms = {
 }
 
 pop_correction = {'European/Unspecified': 'European'}
+
+###############################################################################
+#                            RST File Definitions                             #
+###############################################################################
+
+PHENO_CATS = """\
+The following 179 phenotype categories can be searched by alias or category:
+
+{}
+"""
+
+PHENOS = """\
+The following phenotypes are stored in the GRASP database (there are 1,209 of
+them):
+
+{}
+"""
+
+POPS = """\
+The following populations are available in the Population table:
+
+{}
+"""
+
+FLAGS = """\
+The Population table only contains summary level population information, each
+study also has counts of discovery and replication populations. To query
+studies that only contain certain populations, this module uses bitwise flags.
+To make these easier to use, we use the `py-flags
+<https://pypi.python.org/pypi/py-flags>`_ package, and map the following
+population flags:
+
+{}
+"""
+
+TABLE_INFO = """\
+The two important tables with the majority of the data are Study and SNP. In
+addition, phenotype data is stored in Phenotype and PhenoCats, population data
+is in Population, and platforms are in Platform.
+
+.. contents:: **Contents**
+
+Study
+=====
+
+To query studies, it is recommended to use the query.get_studies() function.
+
+{study}
+
+
+SNP
+===
+
+{snp}
+
+Phenotype
+=========
+
+All available phenotypes are available on the `Phenotypes wiki page
+<https://github.com/MikeDacre/grasp/wiki/Phenotypes>`_
+
+- id
+- phenotype
+- studies (link to Study table)
+- snps (link to SNP table)
+
+PhenoCats
+=========
+
+All phenotype categories are available on the `Phenotype Categories wiki page
+<https://github.com/MikeDacre/grasp/wiki/Phenotype-Categories>`_
+
+- id
+- population
+- alias
+- studies (link to Study table)
+- snps (link to SNP table)
+
+Population
+==========
+
+- id
+- population
+- studies (link to Study table)
+- snps (link to SNP table)
+
+All population entries are available on the `Populations wiki page
+<https://github.com/MikeDacre/grasp/wiki/Populations>`_
+
+Platform
+========
+
+- id
+- platform
+- studies (link to Study table)
+- snps (link to SNP table)
+"""
