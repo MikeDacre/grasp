@@ -22,11 +22,12 @@ For reference information (e.g. column, population, and phenotype lists) see
 `the wiki <https://github.com/MikeDacre/grasp/wiki>`_.
 
 For complete API documentation, go to the
-`documentation site <https://mikedacre.github.io/grasp/>`_
+`documentation site <http://grasp.readthedocs.io/en/latest/>`_
 
+.. contents:: **Contents**
 
 Installation
--------------
+------------
 
 Use the standard installation procedure:
 
@@ -98,12 +99,12 @@ Tables
 
 This module provides 6 tables:
 
-`Study <https://github.com/MikeDacre/grasp/wiki/Table-Columns#study>`_,
-`Phenotype <https://github.com/MikeDacre/grasp/wiki/Table-Columns#phenotype>`_,
-`PhenoCats <https://github.com/MikeDacre/grasp/wiki/Table-Columns#phenocats>`_,
-`Platform <https://github.com/MikeDacre/grasp/wiki/Table-Columns#platform>`_,
-`Population <https://github.com/MikeDacre/grasp/wiki/Table-Columns#population>`_,
-and `SNP <https://github.com/MikeDacre/grasp/wiki/Table-Columns#snp>`_ (as well
+`Study <http://grasp.readthedocs.io/en/latest/table_columns.html#study>`_,
+`Phenotype <http://grasp.readthedocs.io/en/latest/table_columns.html#phenotype>`_,
+`PhenoCats <http://grasp.readthedocs.io/en/latest/table_columns.html#phenocats>`_,
+`Platform <http://grasp.readthedocs.io/en/latest/table_columns.html#platform>`_,
+`Population <http://grasp.readthedocs.io/en/latest/table_columns.html#population>`_,
+and `SNP <http://grasp.readthedocs.io/en/latest/table_columns.html#snp>`_ (as well
 as several association tables)
 
 Querying
@@ -171,3 +172,8 @@ Example Workflow
   # Plot the overlapping SNPs
   snps = q.intersect_overlapping_series(eur_snps_df.pval_median, afr_snps_df.pval_median)
   snps.plot()
+
+ToDo
+----
+
+* Add more functions to grasp script, including lookup by position or range of positions

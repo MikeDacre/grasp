@@ -1,6 +1,10 @@
 Simple Python GRASP API
 =======================
 
+.. image:: http://grasp.readthedocs.io/en/latest/?badge=latest
+
+.. image:: https://img.shields.io/badge/python%20versions-3.4%203.5%203.6-brightgreen.svg
+
 +---------+-------------------------------------------------+
 | Author  | Michael D Dacre <mike.dacre@gmail.com>          |
 +---------+-------------------------------------------------+
@@ -30,7 +34,7 @@ For reference information (e.g. column, population, and phenotype lists) see
 `the wiki <https://github.com/MikeDacre/grasp/wiki>`_.
 
 For complete API documentation, go to the
-`documentation site <https://mikedacre.github.io/grasp/>`_
+`documentation site <http://grasp.readthedocs.io/en/latest/>`_
 
 .. contents:: **Contents**
 
@@ -107,12 +111,12 @@ Tables
 
 This module provides 6 tables:
 
-`Study <https://github.com/MikeDacre/grasp/wiki/Table-Columns#study>`_,
-`Phenotype <https://github.com/MikeDacre/grasp/wiki/Table-Columns#phenotype>`_,
-`PhenoCats <https://github.com/MikeDacre/grasp/wiki/Table-Columns#phenocats>`_,
-`Platform <https://github.com/MikeDacre/grasp/wiki/Table-Columns#platform>`_,
-`Population <https://github.com/MikeDacre/grasp/wiki/Table-Columns#population>`_,
-and `SNP <https://github.com/MikeDacre/grasp/wiki/Table-Columns#snp>`_ (as well
+`Study <http://grasp.readthedocs.io/en/latest/table_columns.html#study>`_,
+`Phenotype <http://grasp.readthedocs.io/en/latest/table_columns.html#phenotype>`_,
+`PhenoCats <http://grasp.readthedocs.io/en/latest/table_columns.html#phenocats>`_,
+`Platform <http://grasp.readthedocs.io/en/latest/table_columns.html#platform>`_,
+`Population <http://grasp.readthedocs.io/en/latest/table_columns.html#population>`_,
+and `SNP <http://grasp.readthedocs.io/en/latest/table_columns.html#snp>`_ (as well
 as several association tables)
 
 Querying

@@ -278,7 +278,7 @@ Phenotype
 ---------
 
 All available phenotypes are available on the `Phenotypes wiki page
-<https://github.com/MikeDacre/grasp/wiki/Phenotypes>`_
+<http://grasp.readthedocs.io/en/latest/query_ref.html#phenotype>`_
 
 - id
 - phenotype
@@ -289,7 +289,7 @@ PhenoCats
 ---------
 
 All phenotype categories are available on the `Phenotype Categories wiki page
-<https://github.com/MikeDacre/grasp/wiki/Phenotype-Categories>`_
+<http://grasp.readthedocs.io/en/latest/query_ref.html#phenocat>`_
 
 - id
 - population
@@ -306,7 +306,7 @@ Population
 - snps (link to SNP table)
 
 All population entries are available on the `Populations wiki page
-<https://github.com/MikeDacre/grasp/wiki/Populations>`_
+<http://grasp.readthedocs.io/en/latest/query_ref.html#population>`_
 
 Platform
 --------
