@@ -254,7 +254,6 @@ def lookup_rsid(rsid, study=False, columns=None, pandas=False):
     else:
         raise ValueError('rsid must be either list or string')
 
-    return q
     if pandas:
         return _pd.read_sql(q.statement, e, index_col='study_snpid')
     else:
