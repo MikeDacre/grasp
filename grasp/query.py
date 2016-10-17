@@ -16,9 +16,14 @@ Helpful additional functions:
         Return a list of phenotypes or phenotype categories present in all
         queried populations.
 
+    `write_study_dict()`:
+        Write the dictionary returned from `get_studies(dictionary=True)` to
+        a tab delimited file with extra data from the database.
+
 Lookup functions:
-    `lookup_rsid()` and `lookup_location()` allow the querying of the database
-    for specific SNPs and can return customized information on them.
+    `lookup_rsid()`, `lookup_location()` and `lookup_studies()` allow the
+    querying of the database for specific SNPs and can return customized
+    information on them.
 
 MyVariant:
     `get_variant_info()`:
@@ -44,7 +49,8 @@ from . import ref as _ref
 from . import tables as t
 
 __all__ = ["get_studies", "get_snps", "get_variant_info",
-           "find_intersecting_phenotypes", "collapse_dataframe",
+           "intersecting_phenos", "lookup_rsid", "lookup_location",
+           "lookup_studies", "write_study_dict", "collapse_dataframe",
            "intersect_overlapping_series"]
 
 
@@ -445,12 +451,12 @@ def lookup_location(chrom, position, study=False, columns=None, pandas=False):
             return q.all()
 
 
-def lookup_studies(title=None, id=None, columns=None, pandas=False):
+def lookup_studies(title=None, study_id=None, columns=None, pandas=False):
     """Find all studies matching either title or id.
 
     Args:
         title (str):    The study title, string or list of strings.
-        id (int):       The row ID, usually the PMID, int or list of ints.
+        study_id (int): The row ID, usually the PMID, int or list of ints.
         columns (list): A list of columns to include in the query. Default is
                         all. List must be made up of column objects, e.g.
                         [t.SNP.snpid, t.Study.id]
@@ -468,15 +474,23 @@ def lookup_studies(title=None, id=None, columns=None, pandas=False):
     q = s.query(*columns)
 
     if title:
-        if not isinstance(title, (tuple, list)):
+        if isinstance(title, dict):
+            title = list(title.keys())
+        if isinstance(title, str):
             title = [title]
+        if not isinstance(title, (tuple, list)):
+            raise KeywordError('title argument must be a string or list')
         q = q.filter(t.Study.title.in_(title))
 
-    if id:
-        if not isinstance(id, (tuple, list)):
-            id = [id]
-            id = [int(id) for i in id]
-        q = q.filter(t.Study.title.in_(id))
+    if study_id:
+        if isinstance(study_id, int):
+            study_id = [study_id]
+        elif isinstance(study_id, str):
+            study_id = [int(study_id)]
+        if not isinstance(study_id, (tuple, list)):
+            raise KeywordError('title argument must be an int or list')
+        study_id = [int(i) for i in study_id]
+        q = q.filter(t.Study.title.in_(study_id))
 
     if pandas:
         return _pd.read_sql(q.statement, e, index_col='id')
@@ -677,13 +691,11 @@ def write_study_dict(study_dict, outfile):
         None
 
     """
-    _, e = _db.get_session()
-
     columns = [t.Study.id, t.Study.title, t.Study.author, t.Study.journal,
                t.Study.sample_size, t.Study.replication_size,
                t.Study.snp_count]
 
-    studies = lookup_studies(id=[i for i in study_dict.values()],
+    studies = lookup_studies(study_id=[i for i in study_dict.values()],
                              columns=columns, pandas=True)
 
     studies.to_csv(outfile, sep='\t')
