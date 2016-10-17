@@ -58,9 +58,49 @@ grasp.tables
 ------------
 
 .. automodule:: grasp.tables
-    :members:
     :show-inheritance:
 
+SNP
+...
+
+.. autoclass:: grasp.tables.SNP
+   :members:
+   :show-inheritance:
+
+Study
+.....
+
+.. autoclass:: grasp.tables.Study
+   :members:
+   :show-inheritance:
+
+Phenotype
+.........
+
+.. autoclass:: grasp.tables.Phenotype
+   :members:
+   :show-inheritance:
+
+PhenoCats
+.........
+
+.. autoclass:: grasp.tables.Phenotype
+   :members:
+   :show-inheritance:
+
+Population
+...........
+
+.. autoclass:: grasp.tables.Population
+   :members:
+   :show-inheritance:
+
+Platform
+........
+
+.. autoclass:: grasp.tables.Platform
+   :members:
+   :show-inheritance:
 
 grasp.db
 --------

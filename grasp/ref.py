@@ -13,7 +13,36 @@ __all__ = ['PopFlag', 'pheno_synonyms']
 
 class PopFlag(_Flags):
 
-    """A simplified bitwise flag system for tracking populations."""
+    """A simplified bitwise flag system for tracking populations.
+
+    Based on `py-flags <https://pypi.python.org/pypi/py-flags>`_
+
+    Attributes:
+        eur         : 1     #  European
+        afr         : 2     #  African ancestry
+        east_asian  : 4     #  East Asian
+        south_asian : 8     #  Indian/South Asian
+        his         : 16    #  Hispanic
+        native      : 32    #  Native
+        micro       : 64    #  Micronesian
+        arab        : 128   #  Arab/ME
+        mix         : 256   #  Mixed
+        uns         : 512   #  Unspec
+        filipino    : 1024  #  Filipino
+        indonesian  : 2048  #  Indonesian
+
+    Example::
+        eur = PopFlag.eur
+        afr = PopFlag(2)
+        his_micro = PopFlag.from_simple_string('his|micro')
+        four_pops = eur | afr
+        four_pops |= his_micro
+        assert four_pops == PopFlag.from_simple_string('his|micro|afr|eur')
+        PopFlag.eur & four_pops > 0   # Returns True
+        PopFlag.eur i== four_pops     # Returns False
+        PopFlag.arab & four_pops > 0  # Returns False
+
+    """
 
     eur         = 1     #  European
     afr         = 2     #  African ancestry
