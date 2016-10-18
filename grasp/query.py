@@ -60,9 +60,10 @@ __all__ = ["get_studies", "get_snps", "get_variant_info",
 
 
 def get_studies(primary_phenotype=None, pheno_cats=None, pheno_cats_alias=None,
-                primary_pop=None, has_disc_pop=None, has_rep_pop=None,
-                only_disc_pop=None, only_rep_pop=None, query=False,
-                count=False, dictionary=False, pandas=False):
+                primary_pop=None, has_pop=None, only_pop=None,
+                has_disc_pop=None, has_rep_pop=None, only_disc_pop=None,
+                only_rep_pop=None, query=False, count=False, dictionary=False,
+                pandas=False):
     """Return a list of studies filtered by phenotype and population.
 
     There are two ways to query both phenotype and population.
@@ -95,16 +96,19 @@ def get_studies(primary_phenotype=None, pheno_cats=None, pheno_cats_alias=None,
 
         Only provide one of pheno_cats or pheno_cats_alias
 
-        Population Arguments are `primary_pop`, `has_disc_pop`, `has_rep_pop`,
-        `only_disc_pop`, `only_rep_pop`.
+        Population Arguments are `primary_pop`, `has_pop`, `only_pop`,
+        `has_disc_pop`, `has_rep_pop`, `only_disc_pop`, `only_rep_pop`.
 
         `primary_pop` is a simple argument, the others use bitwise flags for
         lookup.
 
-        The easiest way to use the following parameters is with the
-        _ref.PopFlag object. It uses py-flags. For example::
+        `has_pop` and `only_pop` simpply combine both the discovery and
+        replication population lookups.
 
-            pops = _ref.PopFlag.eur | _ref.PopFlag.afr
+        The easiest way to use the `has_` and `only_` parameters is with the
+        PopFlag object. It uses `py-flags`. For example::
+
+            pops = PopFlag.eur | PopFlag.afr
 
         In addition you can provide a list of strings corresponding to PopFlag
         attributes.
@@ -123,6 +127,8 @@ def get_studies(primary_phenotype=None, pheno_cats=None, pheno_cats_alias=None,
         primary_pop:       Query the primary population, string or list of
                            strings.
 
+        has_pop:           Return all studies with these populations
+        only_pop:          Return all studies with these populations
         has_disc_pop:      Return all studies with these discovery populations
         has_rep_pop:       Return all studies with these replication
                            populations
@@ -191,9 +197,18 @@ def get_studies(primary_phenotype=None, pheno_cats=None, pheno_cats_alias=None,
             q = q.filter(t.Study.population.has(population=primary_pop))
 
     # Bitwise population queries
+    if has_pop:
+        pop_flags = get_pop_flags(has_pop)
+        q = q.filter(t.Study.disc_pop_flag.op('&')(int(pop_flags)))
+    elif only_pop:
+        pop_flags = get_pop_flags(only_pop)
+        q = q.filter(
+            t.Study.disc_pop_flag.is_(int(pop_flags))
+        )
+
     if has_disc_pop:
         pop_flags = get_pop_flags(has_disc_pop)
-        q = q.filter(t.Study.disc_pop_flag.op('&')(int(pop_flags)) != 0)
+        q = q.filter(t.Study.disc_pop_flag.op('&')(int(pop_flags)))
     elif only_disc_pop:
         pop_flags = get_pop_flags(only_disc_pop)
         q = q.filter(
@@ -202,7 +217,7 @@ def get_studies(primary_phenotype=None, pheno_cats=None, pheno_cats_alias=None,
 
     if has_rep_pop:
         pop_flags = get_pop_flags(has_rep_pop)
-        q = q.filter(t.Study.disc_pop_flag.op('&')(int(pop_flags)) != 0)
+        q = q.filter(t.Study.disc_pop_flag.op('&')(int(pop_flags)))
     elif only_rep_pop:
         pop_flags = get_pop_flags(only_rep_pop)
         q = q.filter(
