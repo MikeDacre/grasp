@@ -65,6 +65,8 @@ To query studies, it is recommended to use the query.get_studies() function.
 +------------------+---------------------------------------------------------------------------------+--------------+
 | total_disc       | Total discovery samples                                                         | Integer      |
 +------------------+---------------------------------------------------------------------------------+--------------+
+| pop_flag         | A bitwise flag that shows presence/absence of all populations (disc and rep)    | Integer      |
++------------------+---------------------------------------------------------------------------------+--------------+
 | disc_pop_flag    | A bitwise flag that shows presence/absence of discovery populations             | Integer      |
 +------------------+---------------------------------------------------------------------------------+--------------+
 | european         | European                                                                        | Integer      |

@@ -348,6 +348,7 @@ class Study(Base):
                                      backref="studies")
     total            = _Column(_Integer)
     total_disc       = _Column(_Integer)
+    pop_flag         = _Column(_Integer, index=True)  # Will hold a bitwise flag
     disc_pop_flag    = _Column(_Integer, index=True)  # Will hold a bitwise flag
     european         = _Column(_Integer)
     african          = _Column(_Integer)
@@ -404,6 +405,7 @@ class Study(Base):
         ('population',       ('relationship', 'GWAS description, link to table') ),
         ('total',            ('Integer',      'Total Discovery + Replication sample size') ),
         ('total_disc',       ('Integer',      'Total discovery samples') ),
+        ('pop_flag',         ('Integer',      'A bitwise flag that shows presence/absence of all populations (discovery and replication)') ),
         ('disc_pop_flag',    ('Integer',      'A bitwise flag that shows presence/absence of discovery populations') ),
         ('european',         ('Integer',      'European') ),
         ('african',          ('Integer',      'African ancestry') ),
@@ -445,6 +447,11 @@ class Study(Base):
     def rep_pops(self):
         """Convert rep_pop_flag to PopFlag."""
         return _PopFlag(self.rep_pop_flag)
+
+    @property
+    def pops(self):
+        """Convert rep_pop_flag to PopFlag."""
+        return _PopFlag(self.pop_flag)
 
     @property
     def population_information(self):
