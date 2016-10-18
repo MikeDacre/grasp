@@ -63,7 +63,7 @@ setup(
     keywords='grasp sqlalchemy',
 
     install_requires=['sqlalchemy', 'pandas', 'tqdm', 'python-dateutil',
-                      'pyflags', 'myvariant', 'tabulate'],
+                      'py-flags', 'myvariant', 'tabulate'],
     packages=['grasp'],
     entry_points={
         'console_scripts': [
