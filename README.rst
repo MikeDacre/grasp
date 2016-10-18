@@ -10,10 +10,11 @@ Simple Python GRASP API
 +---------+-------------------------------------------------+
 
 
-.. image:: https://readthedocs.org/projects/grasp/badge/?version=latest
-.. image:: https://img.shields.io/badge/python%20versions-3.4%203.5%203.6-brightgreen.svg
 .. image:: https://api.codacy.com/project/badge/Grade/6a6be14b83894d76b440e853ff7e5cd3
    :target: https://www.codacy.com/app/mike-dacre/grasp?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=MikeDacre/grasp&amp;utm_campaign=Badge_Grade
+.. image:: https://readthedocs.org/projects/grasp/badge/?version=latest
+   :target: https://grasp.readthedocs.io/
+.. image:: https://img.shields.io/badge/python%20versions-3.4%203.5%203.6-brightgreen.svg
 
 
 This module contains a Python 3 API to work with the GRASP database. The
@@ -37,10 +38,10 @@ For reference information (e.g. column, population, and phenotype lists) see
 `the wiki <https://github.com/MikeDacre/grasp/wiki>`_.
 
 For complete API documentation, go to the
-`documentation site <http://grasp.readthedocs.io/en/latest/>`_
+`documentation site <https://grasp.readthedocs.io/en/latest/>`_
 
 For a nice little example of usage, see the `BMI Jupyter Notebook
-<https://github.com/MikeDacre/grasp/blob/dev/examples/BMI_EUR_v_AFR.ipynb>`_
+<https://github.com/MikeDacre/grasp/blob/master/examples/BMI_EUR_v_AFR.ipynb>`_
 
 .. contents:: **Contents**
 
