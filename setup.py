@@ -35,7 +35,7 @@ class CustomInstall(install):
 
 setup(
     name='grasp',
-    version='0.3.0b1',
+    version='0.4.0b1',
     description='A Simple GRASP (grasp.nhlbi.nih.gov) API based on SQLAlchemy and Pandas',
     long_description=long_description,
     url='https://github.com/MikeDacre/grasp',

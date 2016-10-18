@@ -44,6 +44,12 @@ from time import sleep as _sleep
 import pandas as _pd
 import myvariant as _mv
 
+try:
+    import numpy as _np
+    from matplotlib import pyplot as _plt
+except ImportError:
+    pass
+
 from . import db as _db
 from . import ref as _ref
 from . import tables as t
@@ -651,14 +657,18 @@ def collapse_dataframe(df, mechanism='median', pvalue_filter=None,
 
 
 def intersect_overlapping_series(series1, series2, names=None,
-                                 stats=True, plot=False):
+                                 stats=True, plot=None, name=None):
     """Plot all SNPs that overlap between two pvalue series.
 
     Args:
-        series: A pandas series object
-        names:  A list of two names to use for the resultant dataframes
-        stats:  Print some stats on the intersection
-        plot:   Plot the resulting intersection
+        series{1,2} (Series): A pandas series object
+        names (list):         A list of two names to use for the resultant
+                              dataframes
+        stats (bool):         Print some stats on the intersection
+        plot (str):           Plot the resulting intersection, path to save
+                              figure to (must end in .pdf/.png). Numpy and
+                              Matplotlib are required.
+        name (str):           A name for the plot, optional.
 
     Returns:
         DataFrame: with the two series as columns
@@ -683,7 +693,19 @@ def intersect_overlapping_series(series1, series2, names=None,
         print("Intersected df len: {}".format(len(df)))
 
     if plot:
-        df.plot()
+        name = name if name else ''
+        pdf = -np.log10(df)
+        lmax = pdf.max().max() + 2
+        f, a = plt.subplots(figsize=(10,10))
+        pdf.plot(x=names[0], y=names[1], ax=a, kind='scatter')
+        a.set_title(name)
+        a.set_xlabel("{} | -log10 pval".format(names[0]))
+        a.set_ylabel("{} | -log10 pval".format(names[1]))
+        a.set_xlim(0, lmax)
+        a.set_ylim(0, lmax)
+        plt.grid()
+        f.savefig(plot)
+        plt.show()
 
     return df
 

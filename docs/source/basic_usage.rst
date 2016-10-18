@@ -24,6 +24,9 @@ For reference information (e.g. column, population, and phenotype lists) see
 For complete API documentation, go to the
 `documentation site <http://grasp.readthedocs.io/en/latest/>`_
 
+For a nice little example of usage, see the `BMI Jupyter Notebook
+<https://github.com/MikeDacre/grasp/blob/dev/examples/BMI_EUR_v_AFR.ipynb>`_
+
 .. contents:: **Contents**
 
 Installation

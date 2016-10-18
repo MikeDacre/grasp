@@ -22,8 +22,8 @@ source_suffix = '.rst'
 project   = 'grasp'
 copyright = '2016, Michael Dacre'
 author    = 'Michael Dacre'
-version   = '0.3'
-release   = '0.3.0b1'
+version   = '0.4'
+release   = '0.4.0b1'
 language  = 'en'
 
 

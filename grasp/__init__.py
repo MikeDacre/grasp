@@ -3,7 +3,7 @@ A Simple GRASP (grasp.nhlbi.nih.gov) API based on SQLAlchemy and Pandas
 """
 
 # Version Number
-__version__ = '0.3.0b2'
+__version__ = '0.4.0b1'
 
 # Make sure we can import the important stuff
 # We don't check for modules required for initialization here

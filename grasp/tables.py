@@ -348,7 +348,7 @@ class Study(Base):
                                      backref="studies")
     total            = _Column(_Integer)
     total_disc       = _Column(_Integer)
-    #  pop_flag         = _Column(_Integer, index=True)  # Will hold a bitwise flag
+    pop_flag         = _Column(_Integer, index=True)  # Will hold a bitwise flag
     disc_pop_flag    = _Column(_Integer, index=True)  # Will hold a bitwise flag
     european         = _Column(_Integer)
     african          = _Column(_Integer)
@@ -539,7 +539,7 @@ class Study(Base):
 
     def __repr__(self):
         """Display informaertn about this study."""
-        return '{} <{}:{} "{}" ({}; Pop: {}Disc Pops: {}; Rep Pops: {})>'.\
+        return '{} <{}:{} "{}" ({}; Pop: {}; Disc Pops: {}; Rep Pops: {})>'.\
             format(self.id, self.author, self.journal, self.title,
                    self.phenotype.phenotype, self.population.population,
                    self.disc_pops.to_simple_str(),
