@@ -1,18 +1,62 @@
 """
 A mix of functions to make querying the database and analyzing the results
 faster.
+
+Primary query functions:
+    `get_studies()`:
+        Allows querying the Study table by a combination of population and
+        phenotype variables.
+
+    `get_snps()`:
+        Take a study list (possibly from `get_studies`) and return a SNP list
+        or dataframe.
+
+Helpful additional functions:
+    `intersecting_phenos()`:
+        Return a list of phenotypes or phenotype categories present in all
+        queried populations.
+
+    `write_study_dict()`:
+        Write the dictionary returned from `get_studies(dictionary=True)` to
+        a tab delimited file with extra data from the database.
+
+Lookup functions:
+    `lookup_rsid()`, `lookup_location()` and `lookup_studies()` allow the
+    querying of the database for specific SNPs and can return customized
+    information on them.
+
+MyVariant:
+    `get_variant_info()`:
+        Use myvariant to get variant info for a list of SNPs.
+
+DataFrame Manipulation:
+    `collapse_dataframe()`:
+        Collapse a dataframe (such as that returned by `get_snps()`) to include
+        only a single entry per SNP (collapsing multiple studies into one).
+
+    `intersect_overlapping_series()`:
+        Merge two sets of pvalues (such as those from `collapse_dataframe()`)
+        into a single merged dataframe with the original index and one column
+        for each pvalue.  Good for plotting.
 """
 from time import sleep as _sleep
 
 import pandas as _pd
 import myvariant as _mv
 
+try:
+    import numpy as _np
+    from matplotlib import pyplot as _plt
+except ImportError:
+    pass
+
 from . import db as _db
 from . import ref as _ref
 from . import tables as t
 
 __all__ = ["get_studies", "get_snps", "get_variant_info",
-           "find_intersecting_phenotypes", "collapse_dataframe",
+           "intersecting_phenos", "lookup_rsid", "lookup_location",
+           "lookup_studies", "write_study_dict", "collapse_dataframe",
            "intersect_overlapping_series"]
 
 
@@ -22,9 +66,10 @@ __all__ = ["get_studies", "get_snps", "get_variant_info",
 
 
 def get_studies(primary_phenotype=None, pheno_cats=None, pheno_cats_alias=None,
-                primary_pop=None, has_disc_pop=None, has_rep_pop=None,
-                only_disc_pop=None, only_rep_pop=None, query=False,
-                count=False, dictionary=False, pandas=False):
+                primary_pop=None, has_pop=None, only_pop=None,
+                has_disc_pop=None, has_rep_pop=None, only_disc_pop=None,
+                only_rep_pop=None, query=False, count=False, dictionary=False,
+                pandas=False):
     """Return a list of studies filtered by phenotype and population.
 
     There are two ways to query both phenotype and population.
@@ -57,25 +102,28 @@ def get_studies(primary_phenotype=None, pheno_cats=None, pheno_cats_alias=None,
 
         Only provide one of pheno_cats or pheno_cats_alias
 
-        Population Arguments are `primary_pop`, `has_disc_pop`, `has_rep_pop`,
-        `only_disc_pop`, `only_rep_pop`.
+        Population Arguments are `primary_pop`, `has_pop`, `only_pop`,
+        `has_disc_pop`, `has_rep_pop`, `only_disc_pop`, `only_rep_pop`.
 
         `primary_pop` is a simple argument, the others use bitwise flags for
         lookup.
 
-        The easiest way to use the following parameters is with the
-        _ref.PopFlag object. It uses py-flags. For example::
+        `has_pop` and `only_pop` simpply combine both the discovery and
+        replication population lookups.
 
-            pops = _ref.PopFlag.eur | _ref.PopFlag.afr
+        The easiest way to use the `has_` and `only_` parameters is with the
+        PopFlag object. It uses `py-flags`. For example::
 
-        In addition you can provide a list of strings correcponding to PopFlag
+            pops = PopFlag.eur | PopFlag.afr
+
+        In addition you can provide a list of strings corresponding to PopFlag
         attributes.
 
         Note: the `only_` parameters work as ANDs, not ORs. So
         only_disc_pop='eur|afr' will return those studies that have BOTH
         european and african discovery populations, but no other discovery
         populations. On the other hand, `has_` works as an OR, and will return
-        any study with any of the spefified populations.
+        any study with any of the specified populations.
 
     Args:
         primary_phenotype: Phenotype of interest, string or list of strings.
@@ -85,6 +133,8 @@ def get_studies(primary_phenotype=None, pheno_cats=None, pheno_cats_alias=None,
         primary_pop:       Query the primary population, string or list of
                            strings.
 
+        has_pop:           Return all studies with these populations
+        only_pop:          Return all studies with these populations
         has_disc_pop:      Return all studies with these discovery populations
         has_rep_pop:       Return all studies with these replication
                            populations
@@ -153,9 +203,18 @@ def get_studies(primary_phenotype=None, pheno_cats=None, pheno_cats_alias=None,
             q = q.filter(t.Study.population.has(population=primary_pop))
 
     # Bitwise population queries
+    if has_pop:
+        pop_flags = get_pop_flags(has_pop)
+        q = q.filter(t.Study.disc_pop_flag.op('&')(int(pop_flags)))
+    elif only_pop:
+        pop_flags = get_pop_flags(only_pop)
+        q = q.filter(
+            t.Study.disc_pop_flag.is_(int(pop_flags))
+        )
+
     if has_disc_pop:
         pop_flags = get_pop_flags(has_disc_pop)
-        q = q.filter(t.Study.disc_pop_flag.op('&')(int(pop_flags)) != 0)
+        q = q.filter(t.Study.disc_pop_flag.op('&')(int(pop_flags)))
     elif only_disc_pop:
         pop_flags = get_pop_flags(only_disc_pop)
         q = q.filter(
@@ -164,7 +223,7 @@ def get_studies(primary_phenotype=None, pheno_cats=None, pheno_cats_alias=None,
 
     if has_rep_pop:
         pop_flags = get_pop_flags(has_rep_pop)
-        q = q.filter(t.Study.disc_pop_flag.op('&')(int(pop_flags)) != 0)
+        q = q.filter(t.Study.disc_pop_flag.op('&')(int(pop_flags)))
     elif only_rep_pop:
         pop_flags = get_pop_flags(only_rep_pop)
         q = q.filter(
@@ -221,6 +280,95 @@ def get_snps(studies, pandas=True):
                 t.SNP.study_id.in_(small_studies)
             ).all()
         return snps
+
+
+def intersecting_phenos(check, primary_pops=None, pop_flags=None,
+                        exclusive=False, pop_type='all',list_only=False):
+    """Return a list of phenotypes that are present in all populations.
+
+    Can only provide one of primary_pops or pop_flags. pop_flags does a
+    bitwise lookup, primary_pops queries the primary string only.
+
+    By default this function returns a list of phenotype categories, if you
+    want to check primary phenotypes instead, provide check='primary'.
+
+    Args:
+        check:        cat/primary either check categories or primary phenos.
+        primary_pops: A string or list of strings corresponding to the
+                      `tables.Study.phenotype` column
+        pop_flags:    A `ref.PopFlag` object or list of objects.
+        pop_type:     all/disc/rep Use with pop_flags only, check either
+                      discovery or replication populations or both.
+        exclusive:    Use with pop_flags only, do an exclusive rather than
+                      inclusion population search
+        list_only:    Return a list of names only, rather than a list of
+                      objects
+
+    Returns:
+        A list of `table.Phenotype` or `table.PhenoCat` objects, or a list of
+        names if `list_only` is specified.
+
+    """
+    # Check arguments
+    if primary_pops and pop_flags:
+        raise KeywordError("Cannot specify both 'primary_pops' and " +
+                           "'pop_flags'")
+    if not primary_pops and not pop_flags:
+        raise KeywordError("Must provide at least one of 'primary_pops' or " +
+                           "'pop_flags'")
+    if check not in ['cat', 'primary']:
+        raise KeywordError("'check' must be one of ['cat', 'primary']")
+
+    # Pick query type
+    if pop_flags:
+        if pop_type not in ['all', 'disc', 'rep']:
+            raise KeywordError("pop_type must be one of ['all','disc','rep']")
+        l = 'only' if exclusive else 'has'
+        key = '{}_pop'.format(l) if pop_type == 'all' else\
+            '{}_{}_pop'.format(l, pop_type)
+        qpops = [get_pop_flags(i) for i in pop_flags]
+    else:
+        key = 'primary_pop'
+        qpops = primary_pops
+
+    # Check that we have an iterable
+    if not isinstance(qpops, (list, tuple)):
+        raise KeywordError('Population query must be a list or tuple')
+
+    # Get phenotype lists and intersect to form a final set
+    # We use IDs here because it makes the set intersection more robust
+    final_set = set()
+    for pop in qpops:
+        p = []
+        for i in get_studies(**{key: pop}):
+            if check == 'cat':
+                p += i.phenotype_cats
+            else:
+                p.append(i.phenotype)
+        out = set([i.id for i in p])
+        if not final_set:
+            final_set  = out
+        else:
+            final_set &= out
+
+    # Get the final phenotype list
+    s, _ = _db.get_session()
+    phenos = []
+    for id_list in _chunks(list(final_set), 999):
+        table = t.Phenotype if check == 'primary' else t.PhenoCats
+        phenos += s.query(table).filter(table.id.in_(id_list)).all()
+
+    # Return the list
+    if list_only:
+        return [i.phenotype for i in phenos] if check == 'primary' \
+                else [i.category for i in phenos]
+    else:
+        return phenos
+
+
+###############################################################################
+#                              Lookup Functions                               #
+###############################################################################
 
 
 def lookup_rsid(rsid, study=False, columns=None, pandas=False):
@@ -328,85 +476,51 @@ def lookup_location(chrom, position, study=False, columns=None, pandas=False):
             return q.all()
 
 
-def find_intersecting_phenotypes(primary_pops=None, pop_flags=None,
-                                 check='cat', pop_type='disc',
-                                 exclusive=False, list_only=False):
-    """Return a list of phenotypes that are present in all populations.
-
-    Can only provide one of primary_pops or pop_flags. pop_flags does a
-    bitwise lookup, primary_pops quries the primary string only.
-
-    By default this function returns a list of phenotype categories, if you
-    want to check primary phenotypes instead, provide check='primary'.
+def lookup_studies(title=None, study_id=None, columns=None, pandas=False):
+    """Find all studies matching either title or id.
 
     Args:
-        primary_pops: A string or list of strings corresponing to the
-                      `tables.Study.phenotype` column
-        pop_flags:    A `ref.PopFlag` object or list of objects.
-        check:        cat/primary either check categories or primary phenos.
-        pop_type:     disc/rep Use with pop_flags only, check either
-                      discovery or replication populations.
-        exclusive:    Use with pop_flags only, do an excusive rather than
-                      inclusion population search
-        list_only:    Return a list of names only, rather than a list of
-                      objects
+        title (str):    The study title, string or list of strings.
+        study_id (int): The row ID, usually the PMID, int or list of ints.
+        columns (list): A list of columns to include in the query. Default is
+                        all. List must be made up of column objects, e.g.
+                        [t.SNP.snpid, t.Study.id]
+        pandas (bool):  Return a dataframe instead of a list of SNPs
 
     Returns:
-        A list of `table.Phenotype` or `table.PhenoCat` objects, or a list of
-        names if `list_only` is specified.
-
+        DataFrame or list: All matching studies as either a dataframe or a list
     """
-    # Check arguments
-    if primary_pops and pop_flags:
-        raise KeywordError("Cannot specify both 'primary_pops' and " +
-                           "'pop_flags'")
-    if not primary_pops and not pop_flags:
-        raise KeywordError("Must provide at least one of 'primary_pops' or " +
-                           "'pop_flags'")
-    if check not in ['cat', 'primary']:
-        raise KeywordError("'check' must be one of ['cat', 'primary']")
+    s, e = _db.get_session()
+    if not columns:
+        columns = [t.Study]
+    if not isinstance(columns, (list, tuple)):
+        columns = [columns]
 
-    # Pick query type
-    if pop_flags:
-        if pop_type not in ['disc', 'rep']:
-            raise KeywordError("'pop_type' must be one of ['disc', 'rep']")
-        l = 'only' if exclusive else 'has'
-        key = '{}_{}_pop'.format(l, pop_type)
-        qpops = [get_pop_flags(i) for i in pop_flags]
+    q = s.query(*columns)
+
+    if title:
+        if isinstance(title, dict):
+            title = list(title.keys())
+        if isinstance(title, str):
+            title = [title]
+        if not isinstance(title, (tuple, list)):
+            raise KeywordError('title argument must be a string or list')
+        q = q.filter(t.Study.title.in_(title))
+
+    if study_id:
+        if isinstance(study_id, int):
+            study_id = [study_id]
+        elif isinstance(study_id, str):
+            study_id = [int(study_id)]
+        if not isinstance(study_id, (tuple, list)):
+            raise KeywordError('title argument must be an int or list')
+        study_id = [int(i) for i in study_id]
+        q = q.filter(t.Study.title.in_(study_id))
+
+    if pandas:
+        return _pd.read_sql(q.statement, e, index_col='id')
     else:
-        key = 'primary_pop'
-        qpops = primary_pops
-
-    # Check that we have an iterable
-    if not isinstance(qpops, (list, tuple)):
-        raise KeywordError('Population query must be a list or tuple')
-
-    # Get phenotype lists and intersect to form a final set
-    # We use IDs here because it makes the set intersection more robust
-    final_set = set()
-    for pop in qpops:
-        p = []
-        for i in get_studies(**{key: pop}):
-            p += i.phenotype_cats if check == 'cat' else i.phenotype
-        out = set([i.id for i in p])
-        if not final_set:
-            final_set  = out
-        else:
-            final_set &= out
-
-    # Get the final phenotype list
-    s, _ = _db.get_session()
-    phenos = []
-    for id_list in _chunks(list(final_set), 999):
-        table = t.Phenotype if primary_pops else t.PhenoCats
-        phenos += s.query(table).filter(table.id.in_(id_list)).all()
-
-    # Return the list
-    if list_only:
-        return [i.category for i in phenos] if check == 'cat' \
-            else [i.phenotype for i in phenos]
-    else:
-        return phenos
+        return q.all()
 
 
 ###############################################################################
@@ -480,9 +594,9 @@ def collapse_dataframe(df, mechanism='median', pvalue_filter=None,
                            'snpid', and 'pval' columns.
         mechanism:         A numpy statistical function to use to collapse the
                            pvalue, median or mean are the common ones.
-        pvalue_filter:     After collapsing the dataframe, filte to only
+        pvalue_filter:     After collapsing the dataframe, filter to only
                            include pvalues less than this cutoff.
-        protected_columns: A list of column names that will be maintened as is,
+        protected_columns: A list of column names that will be maintained as is,
                            although all duplicates will be dropped (randomly).
                            Only makes sense for columns that are identical
                            for all studies of the same SNP.
@@ -543,14 +657,18 @@ def collapse_dataframe(df, mechanism='median', pvalue_filter=None,
 
 
 def intersect_overlapping_series(series1, series2, names=None,
-                                 stats=True, plot=False):
+                                 stats=True, plot=None, name=None):
     """Plot all SNPs that overlap between two pvalue series.
 
     Args:
-        series: A pandas series object
-        names:  A list of two names to use for the resultant dataframes
-        stats:  Print some stats on the intersection
-        plot:   Plot the resulting intersection
+        series{1,2} (Series): A pandas series object
+        names (list):         A list of two names to use for the resultant
+                              dataframes
+        stats (bool):         Print some stats on the intersection
+        plot (str):           Plot the resulting intersection, path to save
+                              figure to (must end in .pdf/.png). Numpy and
+                              Matplotlib are required.
+        name (str):           A name for the plot, optional.
 
     Returns:
         DataFrame: with the two series as columns
@@ -575,7 +693,19 @@ def intersect_overlapping_series(series1, series2, names=None,
         print("Intersected df len: {}".format(len(df)))
 
     if plot:
-        df.plot()
+        name = name if name else ''
+        pdf = -_np.log10(df)
+        lmax = pdf.max().max() + 2
+        f, a = _plt.subplots(figsize=(10,10))
+        pdf.plot(x=names[0], y=names[1], ax=a, kind='scatter')
+        a.set_title(name)
+        a.set_xlabel("{} | -log10 pval".format(names[0]))
+        a.set_ylabel("{} | -log10 pval".format(names[1]))
+        a.set_xlim(0, lmax)
+        a.set_ylim(0, lmax)
+        _plt.grid()
+        f.savefig(plot)
+        _plt.show()
 
     return df
 
@@ -583,6 +713,33 @@ def intersect_overlapping_series(series1, series2, names=None,
 ###############################################################################
 #                              Helper Functions                               #
 ###############################################################################
+
+
+def write_study_dict(study_dict, outfile):
+    """Write a study dictionary from `get_studies(dictionary=True)` to file.
+
+    Looks up studies in the Study table first.
+
+    Args:
+        study_dict (dict): A dictionary of title=>id from the Study table.
+        outfile:           A valid path to a file with write permission.
+
+    Outputs:
+        A tab delimited file of ID, Title, Author, Journal, Discovery
+        Population, Replication Population, SNP_Count
+
+    Returns:
+        None
+
+    """
+    columns = [t.Study.id, t.Study.title, t.Study.author, t.Study.journal,
+               t.Study.sample_size, t.Study.replication_size,
+               t.Study.snp_count]
+
+    studies = lookup_studies(study_id=[i for i in study_dict.values()],
+                             columns=columns, pandas=True)
+
+    studies.to_csv(outfile, sep='\t')
 
 
 def get_pop_flags(pop_flags):
@@ -596,7 +753,7 @@ def get_pop_flags(pop_flags):
         if isinstance(pflag, int):
             pflag = _ref.PopFlag(pflag)
         elif isinstance(pflag, str):
-            pflag = _ref.PopFlag.from_simple_str(pflag)
+            pflag = _ref.PopFlag().from_simple_str(pflag)
         if isinstance(pflag, _ref.PopFlag):
             final_flag |= pflag
         else:

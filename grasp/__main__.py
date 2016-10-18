@@ -6,10 +6,10 @@ Author         Michael D Dacre <mike.dacre@gmail.com>
 Organization   Stanford University
 License        MIT License, use as you wish
 Created        2016-10-08
-Version        0.3.0b1
+Version        0.4.0b1
 ============   ======================================
 
- Last modified: 2016-10-17 00:18
+ Last modified: 2016-10-18 00:38
 
 This is the front-end to a python grasp api, intended to allow easy database
 creation and simple querying.  For most of the functions of this module, you

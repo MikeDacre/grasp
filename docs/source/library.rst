@@ -6,16 +6,116 @@ used in an interactive python session (e.g. with jupyter) alongside pandas.
 Many of the query functions in this library returns pandas dataframes.
 
 Below is a complete documentation of the API for this library. The functions in
-query will be the most interesting for most users.
+`grasp.query` will be the most interesting for most users wanting to do common
+db queries.
+
+Tables are defined in `grasp.tables`, functions for connecting to and building
+the database are in `grasp.db`. `grasp.info` contains simple documentation for
+all of the tables and phenotypes (used to build this documentation).
+
+`grasp.config` handles the static database configuration at `~/.grasp`, and
+`grasp.ref` is used to define module wide static objects, like dictionaries
+and the `PopFlags` class.
+
+
+grasp.query
+-----------
+
+.. automodule:: grasp.query
+    :show-inheritance:
+
+get_studies
+...........
+
+.. autofunction:: grasp.query.get_studies
+
+get_snps
+........
+
+.. autofunction:: grasp.query.get_snps
+
+lookup_rsid
+...........
+
+.. autofunction:: grasp.query.lookup_rsid
+
+lookup_location
+...............
+
+.. autofunction:: grasp.query.lookup_location
+
+lookup_studies
+..............
+
+.. autofunction:: grasp.query.lookup_studies
+
+get_variant_info
+................
+
+.. autofunction:: grasp.query.get_variant_info
+ 
+get_collapse_dataframe
+......................
+
+.. autofunction:: grasp.query.collapse_dataframe
+
+intersect_overlapping_series
+............................
+
+.. autofunction:: grasp.query.intersect_overlapping_series
+
+write_study_dict
+................
+
+.. autofunction:: grasp.query.write_study_dict
 
 grasp.tables
 ------------
 
 .. automodule:: grasp.tables
-    :members:
-    :undoc-members:
     :show-inheritance:
 
+SNP
+...
+
+.. autoclass:: grasp.tables.SNP
+   :members:
+   :show-inheritance:
+
+Study
+.....
+
+.. autoclass:: grasp.tables.Study
+   :members:
+   :show-inheritance:
+
+Phenotype
+.........
+
+.. autoclass:: grasp.tables.Phenotype
+   :members:
+   :show-inheritance:
+
+PhenoCats
+.........
+
+.. autoclass:: grasp.tables.Phenotype
+   :members:
+   :show-inheritance:
+
+Population
+...........
+
+.. autoclass:: grasp.tables.Population
+   :members:
+   :show-inheritance:
+
+Platform
+........
+
+.. autoclass:: grasp.tables.Platform
+   :members:
+   :show-inheritance:
 
 grasp.db
 --------
@@ -25,14 +125,7 @@ grasp.db
     :undoc-members:
     :show-inheritance:
 
-grasp.query
------------
 
-.. automodule:: grasp.query
-    :members:
-    :undoc-members:
-    :show-inheritance:
- 
 grasp.config
 ------------
 

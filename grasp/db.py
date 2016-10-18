@@ -274,6 +274,9 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
             if l > 46 and f[46]:
                 rep_pop |= pflag.indonesian
 
+            # Set the global population flag
+            pop_flag = disc_pop | rep_pop
+
             # Create study
             study_records.append({
                 'id':               int(f[0]),
@@ -303,6 +306,7 @@ def initialize_database(study_file, grasp_file, commit_every=250000,
                 'population':       population,
                 'total':            int(f[20]),
                 'total_disc':       int(f[21]),
+                'pop_flag':         int(pop_flag),
                 'disc_pop_flag':    int(disc_pop),
                 'european':         int(f[22]) if l > 22 and f[22] else None,
                 'african':          int(f[23]) if l > 23 and f[23] else None,
