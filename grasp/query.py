@@ -694,18 +694,18 @@ def intersect_overlapping_series(series1, series2, names=None,
 
     if plot:
         name = name if name else ''
-        pdf = -np.log10(df)
+        pdf = -_np.log10(df)
         lmax = pdf.max().max() + 2
-        f, a = plt.subplots(figsize=(10,10))
+        f, a = _plt.subplots(figsize=(10,10))
         pdf.plot(x=names[0], y=names[1], ax=a, kind='scatter')
         a.set_title(name)
         a.set_xlabel("{} | -log10 pval".format(names[0]))
         a.set_ylabel("{} | -log10 pval".format(names[1]))
         a.set_xlim(0, lmax)
         a.set_ylim(0, lmax)
-        plt.grid()
+        _plt.grid()
         f.savefig(plot)
-        plt.show()
+        _plt.show()
 
     return df
 
