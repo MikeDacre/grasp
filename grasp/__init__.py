@@ -11,8 +11,10 @@ import tabulate as _
 import pandas as _
 import sqlalchemy as _
 import myvariant as _
-import flags as _flags
-if not isinstance(_flags.Flags, _flags.FlatMeta):
+import flags as _
+try:
+    from flags import FlagsMeta as _
+except ImportError:
     raise ImportError('Could not import py-flags. Make sure py-flags is ' +
                       'installed instead of pyflags (the hyphen is important)')
 

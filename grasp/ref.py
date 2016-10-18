@@ -4,7 +4,9 @@ Holds reference objects for use elsewhere in the module.
 # Bitwise flags
 from flags import Flags as _Flags
 from flags import FlagsMeta as _flagtype
-if not isinstance(_Flags, _flagtype):
+try:
+    from flags import FlagsMeta as _
+except ImportError:
     raise ImportError('Could not import py-flags. Make sure py-flags is ' +
                       'installed instead of pyflags (the hyphen is important)')
 
