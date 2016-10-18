@@ -12,6 +12,7 @@ Simple Python GRASP API
 
 .. image:: https://readthedocs.org/projects/grasp/badge/?version=latest
 .. image:: https://img.shields.io/badge/python%20versions-3.4%203.5%203.6-brightgreen.svg
+.. image:: https://api.codacy.com/project/badge/Grade/6a6be14b83894d76b440e853ff7e5cd3    :target: https://www.codacy.com/app/mike-dacre/grasp?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=MikeDacre/grasp&amp;utm_campaign=Badge_Grade
 
 
 This module contains a Python 3 API to work with the GRASP database. The

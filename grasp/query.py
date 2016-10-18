@@ -277,7 +277,7 @@ def get_snps(studies, pandas=True):
 
 
 def intersecting_phenos(check, primary_pops=None, pop_flags=None,
-                        pop_type='disc', exclusive=False, list_only=False):
+                        exclusive=False, pop_type='all',list_only=False):
     """Return a list of phenotypes that are present in all populations.
 
     Can only provide one of primary_pops or pop_flags. pop_flags does a
@@ -291,8 +291,8 @@ def intersecting_phenos(check, primary_pops=None, pop_flags=None,
         primary_pops: A string or list of strings corresponding to the
                       `tables.Study.phenotype` column
         pop_flags:    A `ref.PopFlag` object or list of objects.
-        pop_type:     disc/rep Use with pop_flags only, check either
-                      discovery or replication populations.
+        pop_type:     all/disc/rep Use with pop_flags only, check either
+                      discovery or replication populations or both.
         exclusive:    Use with pop_flags only, do an exclusive rather than
                       inclusion population search
         list_only:    Return a list of names only, rather than a list of
@@ -315,10 +315,11 @@ def intersecting_phenos(check, primary_pops=None, pop_flags=None,
 
     # Pick query type
     if pop_flags:
-        if pop_type not in ['disc', 'rep']:
-            raise KeywordError("'pop_type' must be one of ['disc', 'rep']")
+        if pop_type not in ['all', 'disc', 'rep']:
+            raise KeywordError("pop_type must be one of ['all','disc','rep']")
         l = 'only' if exclusive else 'has'
-        key = '{}_{}_pop'.format(l, pop_type)
+        key = '{}_pop'.format(l) if pop_type == 'all' else\
+            '{}_{}_pop'.format(l, pop_type)
         qpops = [get_pop_flags(i) for i in pop_flags]
     else:
         key = 'primary_pop'
@@ -334,7 +335,10 @@ def intersecting_phenos(check, primary_pops=None, pop_flags=None,
     for pop in qpops:
         p = []
         for i in get_studies(**{key: pop}):
-            p += i.phenotype_cats if check == 'cat' else i.phenotype
+            if check == 'cat':
+                p += i.phenotype_cats
+            else:
+                p.append(i.phenotype)
         out = set([i.id for i in p])
         if not final_set:
             final_set  = out
@@ -345,13 +349,13 @@ def intersecting_phenos(check, primary_pops=None, pop_flags=None,
     s, _ = _db.get_session()
     phenos = []
     for id_list in _chunks(list(final_set), 999):
-        table = t.Phenotype if primary_pops else t.PhenoCats
+        table = t.Phenotype if check == 'primary' else t.PhenoCats
         phenos += s.query(table).filter(table.id.in_(id_list)).all()
 
     # Return the list
     if list_only:
-        return [i.category for i in phenos] if check == 'cat' \
-            else [i.phenotype for i in phenos]
+        return [i.phenotype for i in phenos] if check == 'primary' \
+                else [i.category for i in phenos]
     else:
         return phenos
 
