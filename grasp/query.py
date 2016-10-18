@@ -276,7 +276,7 @@ def get_snps(studies, pandas=True):
         return snps
 
 
-def intersecting_phenos(primary_pops=None, pop_flags=None, check='cat',
+def intersecting_phenos(check, primary_pops=None, pop_flags=None,
                         pop_type='disc', exclusive=False, list_only=False):
     """Return a list of phenotypes that are present in all populations.
 
@@ -287,10 +287,10 @@ def intersecting_phenos(primary_pops=None, pop_flags=None, check='cat',
     want to check primary phenotypes instead, provide check='primary'.
 
     Args:
+        check:        cat/primary either check categories or primary phenos.
         primary_pops: A string or list of strings corresponding to the
                       `tables.Study.phenotype` column
         pop_flags:    A `ref.PopFlag` object or list of objects.
-        check:        cat/primary either check categories or primary phenos.
         pop_type:     disc/rep Use with pop_flags only, check either
                       discovery or replication populations.
         exclusive:    Use with pop_flags only, do an exclusive rather than
