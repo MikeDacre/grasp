@@ -22,7 +22,7 @@ For an introduction see the `github readme <https://github.com/MikeDacre/grasp>`
 
 For a community discussion of the data itself see
 `the wiki <https://github.com/MikeDacre/grasp/wiki>`_. This contains some important
-disclaimers regarding the quatity of the data in GRASP itself, that fundamentally
+disclaimers regarding the quality of the data in GRASP itself, that fundamentally
 limit the utility of this package.
 
 .. toctree::

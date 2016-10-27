@@ -23,10 +23,13 @@ sqlite backend, but postgresql or mysql may be used also; these two are slower
 to initialize (longer write times), but they may be faster on indexed reads.
 
 The GRASP project is a SNP-level index of over 2000 GWAS datasets. It is very
-useful, but difficult to batch query as study descriptions are heterogenous and
+useful, but difficult to batch query as study descriptions are heterogeneous and
 there are more than 9 million rows. By putting this information into a relational
 database, it is easy to pull out bite-sized chunks of data to analyze with
-`pandas <http://pandas.pydata.org/>`_.
+`pandas <http://pandas.pydata.org/>`_. Be aware that GRASP does not include all
+of the SNPs that they should (see               
+`the wiki <https://github.com/MikeDacre/grasp/wiki>`_ for info), so use this
+software with caution.
 
 Commonly queried columns are indexed within the database for fast retrieval. A typical
 query for a single phenotype category returns several million SNPs in about 10 seconds,
@@ -34,9 +37,9 @@ which can then be analyzed with pandas.
 
 To read more about GRASP, visit the `official page <https://grasp.nhlbi.nih.gov/Overview.aspx>`_.
 
-For a community discussion of the data itself see
+For a community discussion of the data itself see               
 `the wiki <https://github.com/MikeDacre/grasp/wiki>`_. This contains some important
-disclaimers regarding the quatity of the data in GRASP itself, that fundamentally
+disclaimers regarding the quality of the data in GRASP itself, that fundamentally
 limit the utility of this package.
 
 For complete API documentation, go to the
@@ -58,7 +61,7 @@ Use the standard installation procedure:
   cd grasp
   python ./setup.py install --user
 
-This code requires a grasp database. Currently sqlite/postgesql/mysql are
+This code requires a grasp database. Currently sqlite/postgresql/mysql are
 supported. Mysql and postgresql can be remote (but must be set up with this
 tool), sqlite is local.
 
