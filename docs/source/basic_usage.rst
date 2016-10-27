@@ -37,7 +37,15 @@ For a nice little example of usage, see the `BMI Jupyter Notebook
 Installation
 ------------
 
-Use the standard installation procedure:
+The best way to install is with pip:
+
+.. code:: shell
+
+   pip install https://github.com/MikeDacre/grasp/archive/v0.4.0b1.tar.gz
+
+When this code reaches version 0.4.1, it will be placed on pypi.
+
+Alternatively, you can clone the repo and install with setuptools:
 
 .. code:: shell
 
