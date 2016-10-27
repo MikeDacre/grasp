@@ -5,10 +5,6 @@ import os
 import codecs
 from subprocess import call
 
-# Make setuptools work everywhere
-import ez_setup
-ez_setup.use_setuptools()
-
 import setuptools
 from setuptools import setup
 from setuptools.command.install import install
