@@ -20,7 +20,10 @@ A Simple GRASP (grasp.nhlbi.nih.gov) API based on SQLAlchemy and Pandas.
 
 For an introduction see the `github readme <https://github.com/MikeDacre/grasp>`_
 
-For table information see the `wiki <https://github.com/MikeDacre/grasp/wiki>`_
+For a community discussion of the data itself see
+`the wiki <https://github.com/MikeDacre/grasp/wiki>`_. This contains some important
+disclaimers regarding the quatity of the data in GRASP itself, that fundamentally
+limit the utility of this package.
 
 .. toctree::
    :maxdepth: 3

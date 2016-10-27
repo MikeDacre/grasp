@@ -18,8 +18,10 @@ which can then be analyzed with pandas.
 
 To read more about GRASP, visit the `official page <https://grasp.nhlbi.nih.gov/Overview.aspx>`_.
 
-For reference information (e.g. column, population, and phenotype lists) see
-`the wiki <https://github.com/MikeDacre/grasp/wiki>`_.
+For a community discussion of the data itself see
+`the wiki <https://github.com/MikeDacre/grasp/wiki>`_. This contains some important
+disclaimers regarding the quatity of the data in GRASP itself, that fundamentally
+limit the utility of this package.
 
 For complete API documentation, go to the
 `documentation site <http://grasp.readthedocs.io/en/latest/>`_
