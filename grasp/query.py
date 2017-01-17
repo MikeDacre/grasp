@@ -405,10 +405,7 @@ def lookup_rsid(rsid, study=False, columns=None, pandas=False):
     if pandas:
         return _pd.read_sql(q.statement, e, index_col='study_snpid')
     else:
-        if isinstance(rsid, str):
-            return q.first()
-        else:
-            return q.all()
+        q.all()
 
 
 def lookup_location(chrom, position, study=False, columns=None, pandas=False):
@@ -470,10 +467,7 @@ def lookup_location(chrom, position, study=False, columns=None, pandas=False):
     if pandas:
         return _pd.read_sql(q.statement, e, index_col='study_snpid')
     else:
-        if isinstance(position, int):
-            return q.first()
-        else:
-            return q.all()
+        return q.all()
 
 
 def lookup_studies(title=None, study_id=None, columns=None, pandas=False):

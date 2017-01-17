@@ -1,5 +1,6 @@
+# -*- coding: utf-8 -*-
 """
-Setup Script for Slurmy
+Setup Script for GRASP
 """
 import os
 import codecs
